@@ -1,0 +1,6 @@
+[first]
+localhost ansible_connection=local
+
+[second]
+
+localhost ansible_connection=local

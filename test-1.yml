@@ -1,0 +1,5 @@
+---
+- name: "Test single execution"
+  hosts: first
+  tasks:
+    - command: "sleep 1"
