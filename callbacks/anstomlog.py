@@ -211,7 +211,6 @@ class CallbackModule(CallbackBase):
                 self._display.display(msg, color='red')
 
         self._display.display("%s | FAILED!" % (result._host.get_name()), color='red')
-        self._display.display(str(result._result))
         self._display.display(deep_serialize(result._result), color='cyan')
 
     def v2_runner_on_ok(self, result):
