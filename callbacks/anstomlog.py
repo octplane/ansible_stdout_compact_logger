@@ -1,9 +1,12 @@
+# pylint: disable=E0401,C0103,C0111,W0212
+
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
 import sys
 from datetime import datetime
 from ansible import constants as C
+from ansible.utils.color import colorize, hostcolor
 
 from ansible.plugins.callback import CallbackBase
 
@@ -44,21 +47,27 @@ class CallbackModule(CallbackBase):
             return "%s | %s | %sms | rc=%s" % (hostname, caption, duration, result.get('rc', 0))
 
     def v2_playbook_on_task_start(self, task, is_conditional):
+        # pylint: disable=W0613,W0201
         self.tark_started = datetime.now()
 
         sys.stdout.write("[%s] %s | " % (str(self.tark_started), task.get_name()))
 
     def v2_runner_on_failed(self, result, ignore_errors=False):
+        # pylint: disable=W0613,
         if 'exception' in result._result:
+            exception_message = "An exception occurred during task execution."
             if self._display.verbosity < 3:
                 # extract just the actual error message from the exception text
                 error = result._result['exception'].strip().split('\n')[-1]
-                msg = "An exception occurred during task execution. To see the full traceback, use -vvv. The error was: %s" % error
+                msg = exception_message + \
+                    "To see the full traceback, use -vvv. The error was: %s" % error
             else:
-                msg = "An exception occurred during task execution. The full traceback is:\n" + result._result['exception'].replace('\n','')
+                msg = exception_message + \
+                    "The full traceback is:\n" + result._result['exception'].replace('\n', '')
 
             if result._task.action in C.MODULE_NO_JSON:
-                self._display.display(self._command_generic_msg(result._host.get_name(), result._result,'FAILED'), color='red')
+                self._display.display(self._command_generic_msg( \
+                    result._host.get_name(), result._result, 'FAILED'), color='red')
             else:
                 self._display.display(msg, color='red')
 
@@ -69,10 +78,13 @@ class CallbackModule(CallbackBase):
         duration = self._get_duration()
 
         if result._task.action in C.MODULE_NO_JSON:
-            self._display.display(self._command_generic_msg(result._host.get_name(), result._result,'SUCCESS'), color='green')
+            self._display.display(
+                self._command_generic_msg(result._host.get_name(), result._result, 'SUCCESS'),
+                color='green')
         else:
 
-            self._display.display("%s | SUCCESS | %dms" % (result._host.get_name(), duration), color='green')
+            self._display.display("%s | SUCCESS | %dms" %
+                (result._host.get_name(), duration), color='green')
             if self._display.verbosity > 0:
                 self._display.display(self._deep_serialize(result._result), color='green')
                 # self._display.display(self._dump_results(result._result))
@@ -94,9 +106,6 @@ class CallbackModule(CallbackBase):
             for item in data:
                 serialized_content = self._deep_serialize(item, indent + 1)
                 output = output + "- " + serialized_content
-                # if len(serialized_content) > 0:
-                #     if len(serialized_content) < (indent + 1) * 2:
-                #         output = output + "- " + serialized_content + "%s\n" % len( serialized_content )
         elif isinstance(data, dict):
             for key, value in data.items():
                 if isinstance(value, dict):
@@ -112,3 +121,26 @@ class CallbackModule(CallbackBase):
                         output = output + "- %s:" % key
                         output = output + value + "\n" + " " * indent * 2
         return output
+
+    def v2_playbook_on_include(self, included_file):
+        msg = 'included: %s for %s' % \
+            (included_file._filename, ", ".join([h.name for h in included_file._hosts]))
+        self._display.display(msg, color='cyan')
+
+    def v2_playbook_on_stats(self, stats):
+        self._display.display("[%s] %s" % (str(datetime.now()), "play recap"))
+
+        hosts = sorted(stats.processed.keys())
+        for h in hosts:
+            t = stats.summarize(h)
+
+            self._display.display(u"[%s] %s : %s %s %s %s" % (
+                str(datetime.now()),
+                hostcolor(h, t),
+                colorize(u'ok', t['ok'], 'green'),
+                colorize(u'changed', t['changed'], 'yellow'),
+                colorize(u'unreachable', t['unreachable'], 'yellow'),
+                colorize(u'failed', t['failures'], 'red')),
+                screen_only=True
+            )
+
