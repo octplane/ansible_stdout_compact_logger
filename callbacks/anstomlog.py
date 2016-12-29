@@ -21,7 +21,7 @@ import unittest
 PREFERED_FIELDS = ['rc', 'stdout', 'stderr', 'start', 'end']
 
 def deep_serialize(data, indent=0):
-    # pylint: disable=I0011,E0602
+    # pylint: disable=I0011,E0602,R0912
 
     padding = " " * indent * 2
     if isinstance(data, list):
