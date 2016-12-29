@@ -10,11 +10,15 @@ cf `ansible.cfg`.
 
 ## Features
 
-- one-line display
-- displays tasks content in a nice way:
-  - ident structs, displays empty arrays, strings
-  - put fields on top when available `['rc', 'stdout', 'stderr', 'start', 'end']`
-- reverts to standard logger when more than `vv` verbosity
+- [x] one-line display
+- [x] displays tasks content in a nice way
+- [x] indent structs, displays empty arrays, strings
+- [x] put fields on top when available `['rc', 'stdout', 'stderr', 'start', 'end']`
+- [x] reverts to standard logger when more than `vv` verbosity
+- [ ] multi host support
+- [ ] correct duration computation(!)
+- [ ] better line colouring
+- [ ] more test around curious errors
 
 ## Sample output
 
