@@ -17,16 +17,19 @@ except ImportError:
 
 import unittest
 
+# Fields we would like to see before the others, in this order, please...
+PREFERED_FIELDS = ['rc', 'stdout', 'stderr', 'start', 'end']
+
 def deep_serialize(data, indent=0):
     # pylint: disable=I0011,E0602
 
     padding = " " * indent * 2
     if isinstance(data, list):
         if data == []:
-            return padding + "[]"
+            return "[]"
         output = "[ "
         if len(data) == 1:
-            output = output + deep_serialize(data[0], 0) + " ]"
+            output = output + ("\n" + padding).join(deep_serialize(data[0], 0).splitlines()) + " ]"
         else:
             list_padding = " " * (indent + 1) * 2
 
@@ -35,13 +38,26 @@ def deep_serialize(data, indent=0):
                     deep_serialize(item, indent)
             output = output + "\n" + padding + " ]"
     elif isinstance(data, dict):
-        padding = padding + "  "
+        list_padding = " " * (indent + 1) * 2
         output = "{\n"
+        for key in PREFERED_FIELDS:
+            if key in data.keys():
+                value = data[key]
+                output = output + list_padding + "- %s: %s\n" % \
+                    (key, deep_serialize(value, indent + 1))
+
         for key, value in data.items():
-            output = output + padding + "- %s: %s\n" % (key, deep_serialize(value, indent + 1))
-        output = output + "}"
+            if key in PREFERED_FIELDS:
+                continue
+            output = output + list_padding + "- %s: %s\n" % (key, deep_serialize(value, indent + 1))
+
+        output = output + padding + "}"
     else:
-        return str(data)
+        string_form = str(data)
+        if len(string_form) == 0:
+            return "\"\""
+        else:
+            return str(data)
     return output
 
 class TestStringMethods(unittest.TestCase):
@@ -62,6 +78,12 @@ class TestStringMethods(unittest.TestCase):
             deep_serialize(self.test_structure['cmd']),
             "[ false ]")
 
+    def test_single_empty_item_array(self):
+        self.assertEqual(
+            deep_serialize([""]),
+            "[ \"\" ]")
+
+
     def test_empty_array(self):
         self.assertEqual(
             deep_serialize(self.test_structure['stdout_lines']),
@@ -77,6 +99,7 @@ class TestStringMethods(unittest.TestCase):
         expected_result = "{\n  - cmd: [ false ]\n}"
         self.assertEqual(deep_serialize(hs), expected_result)
 
+
     def test_hash_array2(self):
         hs = {u'cmd':['one', 'two']}
         expected_result = """{
@@ -87,8 +110,44 @@ class TestStringMethods(unittest.TestCase):
 }"""
         self.assertEqual(deep_serialize(hs), expected_result)
 
-    # def test_complex(self):
-    #     print(deep_serialize(self.test_structure))
+
+    def test_favorite_hash(self):
+        hs = {"cmd": "toto", "rc": 12}
+        expected_result = "{\n  - rc: 12\n  - cmd: toto\n}"
+        self.assertEqual(deep_serialize(hs), expected_result)
+
+    def test_nested(self):
+        hs = {u'cmd':{'bar':['one', 'two']}}
+        expected_result = """{
+  - cmd: {
+    - bar: [ 
+      - one
+      - two
+     ]
+  }
+}"""
+        self.assertEqual(deep_serialize(hs), expected_result)
+
+    def test_multiline_single(self):
+        # pylint: disable=I0011,C0303
+        hs = [["foo", "bar"]]
+        expected_result = """[ [ 
+  - foo
+  - bar
+ ] ]"""
+        # print(deep_serialize(hs))
+        # print(expected_result)
+        self.assertEqual(deep_serialize(hs), expected_result)
+
+    def test_empty_array_no_padding(self):
+        hs = [[{"foo": []}]]
+        expected_result = """[ [ {
+  - foo: []
+} ] ]"""
+        # print(deep_serialize(hs))
+        # print(expected_result)
+        self.assertEqual(deep_serialize(hs), expected_result)
+
 
 class CallbackModule(CallbackBase):
 
