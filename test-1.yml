@@ -3,3 +3,4 @@
   hosts: first
   tasks:
     - command: "sleep 1"
+    - command: "false"
