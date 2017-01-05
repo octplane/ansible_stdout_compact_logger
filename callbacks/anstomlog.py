@@ -38,6 +38,10 @@ def deep_serialize(data, indent=0):
                     deep_serialize(item, indent)
             output = output + "\n" + padding + " ]"
     elif isinstance(data, dict):
+        if "_ansible_no_log" in data and data["_ansible_no_log"]:
+            data = {"censored":
+                    "the output has been hidden due to the fact that"
+                    " 'no_log: true' was specified for this result"}
         list_padding = " " * (indent + 1) * 2
         output = "{\n"
         for key in PREFERED_FIELDS:
@@ -147,7 +151,6 @@ class TestStringMethods(unittest.TestCase):
         # print(deep_serialize(hs))
         # print(expected_result)
         self.assertEqual(deep_serialize(hs), expected_result)
-
 
 class CallbackModule(CallbackBase):
 

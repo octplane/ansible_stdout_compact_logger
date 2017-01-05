@@ -1,6 +1,15 @@
 ---
 - name: "Test single execution"
   hosts: first
+  vars:
+    version: coucou
   tasks:
     - command: "sleep 1"
-    - command: "false"
+    - name: "Secret action"
+      command: "sleep 1"
+      no_log: True
+    - name: "Validate version is a number, > 0"
+      assert:
+        that:
+          - "{{ version | int }} != 0"
+        msg: "'version' must be a number and > 0, is \"{{version}}\""

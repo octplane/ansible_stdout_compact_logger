@@ -13,10 +13,11 @@ cf `ansible.cfg`.
 - [x] one-line display
 - [x] pylint compatible (almost...)
 - [x] displays tasks content in a nice way
-- [x] indent structs, displays empty arrays, strings
-- [x] put fields on top when available `['rc', 'stdout', 'stderr', 'start', 'end']`
+- [x] indents structs, displays empty arrays, strings
+- [x] puts fields on top when available `['rc', 'stdout', 'stderr', 'start', 'end']`
 - [x] reverts to standard logger when more than `vv` verbosity
-- [ ] display `stdout` and `stderr` nicely even when they contain `\n` (**main goal of this logger, YEAH!**)
+- [x] suports no_log attribute in Task
+- [ ] displays `stdout` and `stderr` nicely even when they contain `\n` (**main goal of this logger, YEAH!**)
 - [ ] multi host support
 - [ ] correct duration computation(!)
 - [ ] better line colouring
