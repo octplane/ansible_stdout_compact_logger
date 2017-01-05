@@ -7,7 +7,6 @@ import sys
 from datetime import datetime
 
 try:
-    from ansible import constants as C
     from ansible.utils.color import colorize, hostcolor
     from ansible.plugins.callback import CallbackBase
 except ImportError:
@@ -18,7 +17,7 @@ except ImportError:
 import unittest
 
 # Fields we would like to see before the others, in this order, please...
-PREFERED_FIELDS = ['rc', 'stdout', 'stderr', 'start', 'end']
+PREFERED_FIELDS = ['stdout', 'rc', 'stderr', 'start', 'end', 'msg']
 
 def deep_serialize(data, indent=0):
     # pylint: disable=I0011,E0602,R0912

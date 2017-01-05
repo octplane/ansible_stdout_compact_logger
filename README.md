@@ -14,7 +14,7 @@ cf `ansible.cfg`.
 - [x] pylint compatible (almost...)
 - [x] displays tasks content in a nice way
 - [x] indents structs, displays empty arrays, strings
-- [x] puts fields on top when available `['rc', 'stdout', 'stderr', 'start', 'end']`
+- [x] puts fields on top when available `['stdout', 'rc', 'stderr', 'start', 'end', 'msg']`
 - [x] reverts to standard logger when more than `vv` verbosity
 - [x] suports no_log attribute in Task
 - [ ] displays `stdout` and `stderr` nicely even when they contain `\n` (**main goal of this logger, YEAH!**)
