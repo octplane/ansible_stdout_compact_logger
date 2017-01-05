@@ -207,10 +207,6 @@ class CallbackModule(CallbackBase):
                 msg = exception_message + \
                     "The full traceback is:\n" + result._result['exception'].replace('\n', '')
 
-            if result._task.action in C.MODULE_NO_JSON:
-                self._display.display(self._command_generic_msg( \
-                    result._host.get_name(), result._result, 'FAILED'), color='red')
-            else:
                 self._display.display(msg, color='red')
 
         self._display.display("%s | FAILED!" % (result._host.get_name()), color='red')
@@ -219,16 +215,10 @@ class CallbackModule(CallbackBase):
     def v2_runner_on_ok(self, result):
         duration = self._get_duration()
 
-        if result._task.action in C.MODULE_NO_JSON:
-            self._display.display(
-                self._command_generic_msg(result._host.get_name(), result._result, 'SUCCESS'),
-                color='green')
-        else:
-
-            self._display.display("%s | SUCCESS | %dms" %
-                                  (result._host.get_name(), duration), color='green')
-            if self._display.verbosity > 0:
-                self._display.display(deep_serialize(result._result), color='green')
+        self._display.display("%s | SUCCESS | %dms" %
+                              (result._host.get_name(), duration), color='green')
+        if self._display.verbosity > 0:
+            self._display.display(deep_serialize(result._result), color='green')
 
     def v2_runner_on_unreachable(self, result):
         self._display.display("%s | UNREACHABLE!: %s" % \
