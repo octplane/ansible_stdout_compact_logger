@@ -190,11 +190,20 @@ class CallbackModule(CallbackBase):
     def v2_playbook_on_task_start(self, task, is_conditional):
         # pylint: disable=I0011,W0613,W0201
         self.tark_started = datetime.now()
+        self.task_preamble = True
+        self.task_start_preamble = "[%s] %s | " % (str(self.tark_started), task.get_name())
 
-        sys.stdout.write("[%s] %s | " % (str(self.tark_started), task.get_name()))
+        sys.stdout.write(self.task_start_preamble)
 
     def v2_runner_on_failed(self, result, ignore_errors=False):
-        # pylint: disable=I0011,W0613,
+        # pylint: disable=I0011,W0613,W0201
+        duration = self._get_duration()
+
+        if self.task_preamble:
+            self.task_preamble = False
+        else:
+            sys.stdout.write(self.task_start_preamble)
+
         if 'exception' in result._result:
             exception_message = "An exception occurred during task execution."
             if self._display.verbosity < 3:
@@ -208,11 +217,19 @@ class CallbackModule(CallbackBase):
 
                 self._display.display(msg, color='red')
 
-        self._display.display("%s | FAILED!" % (result._host.get_name()), color='red')
+        self._display.display("%s | FAILED | %dms" %
+                              (result._host.get_name(),
+                               duration), color='red')
         self._display.display(deep_serialize(result._result), color='cyan')
 
     def v2_runner_on_ok(self, result):
+        # pylint: disable=I0011,W0201,
         duration = self._get_duration()
+
+        if self.task_preamble:
+            self.task_preamble = False
+        else:
+            sys.stdout.write(self.task_start_preamble)
 
         self._display.display("%s | SUCCESS | %dms" %
                               (result._host.get_name(), duration), color='green')

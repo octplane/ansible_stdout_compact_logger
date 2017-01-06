@@ -1,0 +1,14 @@
+---
+- name: "Test single execution"
+  hosts: all
+  vars:
+    version: coucou
+  tasks:
+    - command: "sleep 1"
+    - name: "Secret action"
+      command: "sleep 1"
+      no_log: True
+    - name: "Crash on half of the servers"
+      assert:
+        that:
+          - "{{ 'second' in group_names }}"
