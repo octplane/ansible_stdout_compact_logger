@@ -17,9 +17,9 @@ cf `ansible.cfg`.
 - [x] puts fields on top when available `['stdout', 'rc', 'stderr', 'start', 'end', 'msg']`
 - [x] reverts to standard logger when more than `vv` verbosity
 - [x] suports no_log attribute in Task
+- [x] multi host support
+- [ ] correct duration computation
 - [ ] displays `stdout` and `stderr` nicely even when they contain `\n` (**main goal of this logger, YEAH!**)
-- [ ] multi host support
-- [ ] correct duration computation(!)
 - [ ] better line colouring
 - [ ] more test around curious errors
 
