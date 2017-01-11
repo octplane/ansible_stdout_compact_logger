@@ -22,9 +22,11 @@ cf `ansible.cfg`.
 - [x] indents structs, displays empty arrays, strings
 - [x] puts fields on top when available `['stdout', 'rc', 'stderr', 'start', 'end', 'msg']`
 - [x] reverts to standard logger when more than `vv` verbosity
-- [x] suports no_log attribute in Task
+- [x] supports `no_log` attribute in Task
+- [x] supports `_ansible_verbose_always` and `_ansible_verbose_override`
+- [x] supports multiple items in task (#1)
 - [x] multi host support
-- [ ] correct duration computation
+- [x] correct duration computation
 - [ ] displays `stdout` and `stderr` nicely even when they contain `\n` (**main goal of this logger, YEAH!**)
 - [ ] better line colouring
 - [ ] more test around curious errors
