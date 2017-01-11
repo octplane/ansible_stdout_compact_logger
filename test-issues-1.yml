@@ -1,0 +1,10 @@
+---
+- name: "Test case for issue 1"
+  hosts: first
+  tasks:
+    - template:
+        src: "test-files/{{ item.src }}"
+        dest: "test-files/{{ item.dest }}"
+      with_items:
+        - { src: 'variable.txt.j2', dest: 'variable.txt'}
+        - { src: 'non-variable.txt.j2', dest: 'non-variable.txt'}

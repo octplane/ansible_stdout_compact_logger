@@ -188,21 +188,18 @@ class CallbackModule(CallbackBase):
             return "%s | %s | %sms | rc=%s" % (hostname, caption, duration, result.get('rc', 0))
 
     def v2_playbook_on_task_start(self, task, is_conditional):
-        # pylint: disable=I0011,W0613,W0201
+        # pylint: disable=I0011,W0613
+        self._open_section(task.get_name())
+
+    def _open_section(self, section_name):
+        # pylint: disable=I0011,W0201
         self.tark_started = datetime.now()
-        self.task_preamble = True
-        self.task_start_preamble = "[%s] %s | " % (str(self.tark_started), task.get_name())
-
-        sys.stdout.write(self.task_start_preamble)
-
+        self.task_start_preamble = "[%s.%03d] %s | " % (
+            self.tark_started.strftime("%Y-%m-%d %H:%M:%S"),
+            self.tark_started.microsecond / 1000, section_name)
     def v2_runner_on_failed(self, result, ignore_errors=False):
         # pylint: disable=I0011,W0613,W0201
         duration = self._get_duration()
-
-        if self.task_preamble:
-            self.task_preamble = False
-        else:
-            sys.stdout.write(self.task_start_preamble)
 
         if 'exception' in result._result:
             exception_message = "An exception occurred during task execution."
@@ -215,57 +212,105 @@ class CallbackModule(CallbackBase):
                 msg = exception_message + \
                     "The full traceback is:\n" + result._result['exception'].replace('\n', '')
 
-                self._display.display(msg, color='red')
+                self._emit_line(msg, color='red')
 
-        self._display.display("%s | FAILED | %dms" %
-                              (result._host.get_name(),
-                               duration), color='red')
-        self._display.display(deep_serialize(result._result), color='cyan')
+        self._emit_line("%s | FAILED | %dms" %
+                        (result._host.get_name(),
+                         duration), color='red')
+        self._emit_line(deep_serialize(result._result), color='cyan')
 
     def v2_runner_on_ok(self, result):
         # pylint: disable=I0011,W0201,
         duration = self._get_duration()
 
-        if self.task_preamble:
-            self.task_preamble = False
-        else:
-            sys.stdout.write(self.task_start_preamble)
+        self._clean_results(result._result, result._task.action)
 
-        self._display.display("%s | SUCCESS | %dms" %
-                              (result._host.get_name(), duration), color='green')
-        if self._display.verbosity > 0:
-            self._display.display(deep_serialize(result._result), color='green')
+        delegated_vars = result._result.get('_ansible_delegated_vars', None)
+
+        if delegated_vars:
+            host_string = "%s -> %s" % (
+                result._host.get_name(), delegated_vars['ansible_host'])
+        else:
+            host_string = result._host.get_name()
+
+        self._clean_results(result._result, result._task.action)
+        if result._task.action in ('include', 'include_role'):
+            return
+
+        msg, color = self._changed_or_not(result._result, host_string)
+
+        if result._task.loop and 'results' in result._result:
+            for item in result._result['results']:
+                msg, color = self._changed_or_not(item, host_string)
+                item_msg = "%s - item=%s" % (msg, self._get_item(item))
+                self._emit_line("%s | %dms" %
+                                (item_msg, duration), color=color)
+        else:
+            self._emit_line("%s | %dms" %
+                            (msg, duration), color=color)
+        self._handle_warnings(result._result)
+
+        if (
+                self._display.verbosity > 0 or
+                '_ansible_verbose_always' in result._result
+            ) and not '_ansible_verbose_override' in result._result:
+            self._emit_line(deep_serialize(result._result), color='green')
+
+        self._close_section()
+
+    def _changed_or_not(self, result, host_string):
+        if result.get('changed', False):
+            msg = "%s | CHANGED" % host_string
+            color = 'yellow'
+        else:
+            msg = "%s | SUCCESS" % host_string
+            color = 'green'
+
+        return [msg, color]
+
+
+    def _emit_line(self, line, color='normal'):
+        if self.task_start_preamble is None:
+            self._open_section("system")
+
+        sys.stdout.write(self.task_start_preamble)
+        self._display.display(line, color=color)
+
+    def _close_section(self):
+        # pylint: disable=I0011,W0201,
+        self.task_start_preamble = None
 
     def v2_runner_on_unreachable(self, result):
-        self._display.display("%s | UNREACHABLE!: %s" % \
+        self._emit_line("%s | UNREACHABLE!: %s" % \
             (result._host.get_name(), result._result.get('msg', '')), color='yellow')
+        self._close_section()
 
     def v2_runner_on_skipped(self, result):
         duration = self._get_duration()
 
-        self._display.display("%s | SKIPPED | %dms" % \
+        self._emit_line("%s | SKIPPED | %dms" % \
             (result._host.get_name(), duration), color='cyan')
+        self._close_section()
+
 
     def v2_playbook_on_include(self, included_file):
         msg = 'included: %s for %s' % \
             (included_file._filename, ", ".join([h.name for h in included_file._hosts]))
-        self._display.display(msg, color='cyan')
+        self._emit_line(msg, color='cyan')
 
     def v2_playbook_on_stats(self, stats):
-        self._display.display("[%s] %s" % (str(datetime.now()), "-- Play recap --"))
+        self._emit_line("-- Play recap --")
 
         hosts = sorted(stats.processed.keys())
         for h in hosts:
             t = stats.summarize(h)
 
-            self._display.display(u"[%s] %s : %s %s %s %s" % (
-                str(datetime.now()),
+            self._emit_line(u"%s : %s %s %s %s" % (
                 hostcolor(h, t),
                 colorize(u'ok', t['ok'], 'green'),
                 colorize(u'changed', t['changed'], 'yellow'),
                 colorize(u'unreachable', t['unreachable'], 'yellow'),
-                colorize(u'failed', t['failures'], 'red')),
-                                  screen_only=True)
+                colorize(u'failed', t['failures'], 'red')))
 
 if __name__ == '__main__':
     unittest.main()
