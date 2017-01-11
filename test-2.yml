@@ -1,0 +1,5 @@
+---
+- name: "Test single execution"
+  hosts: localhost
+  tasks:
+    - command: "ls ."

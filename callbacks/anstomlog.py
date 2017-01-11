@@ -18,9 +18,11 @@ import unittest
 
 # Fields we would like to see before the others, in this order, please...
 PREFERED_FIELDS = ['stdout', 'rc', 'stderr', 'start', 'end', 'msg']
+DELETABLE_FIELDS = ['stdout', 'stdout_lines', 'rc', 'stderr', 'start', 'end', 'msg']
+
 
 def deep_serialize(data, indent=0):
-    # pylint: disable=I0011,E0602,R0912
+    # pylint: disable=I0011,E0602,R0912,W0631
 
     padding = " " * indent * 2
     if isinstance(data, list):
@@ -43,15 +45,19 @@ def deep_serialize(data, indent=0):
                     " 'no_log: true' was specified for this result"}
         list_padding = " " * (indent + 1) * 2
         output = "{\n"
+
         for key in PREFERED_FIELDS:
             if key in data.keys():
                 value = data[key]
-                output = output + list_padding + "- %s: %s\n" % \
-                    (key, deep_serialize(value, indent + 1))
+                prefix = list_padding + "- %s: " % key
+                output = output + prefix + "%s\n" % \
+                    "\n".join([" " * len(prefix) + line for line in deep_serialize(value, indent ).splitlines()]).strip()
+
+        for key in DELETABLE_FIELDS:
+            if key in data.keys():
+                del data[key]
 
         for key, value in data.items():
-            if key in PREFERED_FIELDS:
-                continue
             output = output + list_padding + "- %s: %s\n" % (key, deep_serialize(value, indent + 1))
 
         output = output + padding + "}"

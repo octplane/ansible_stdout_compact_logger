@@ -13,7 +13,7 @@ cf `ansible.cfg`.
 <center>
 
 ![](shot1.png)
-
+![Stdout Display with multiline outputs](shot2.png)
 </center>
 
 - [x] one-line display
@@ -28,7 +28,7 @@ cf `ansible.cfg`.
 - [x] multi host support
 - [x] correct duration computation
 - [x] diff display support
-- [ ] displays `stdout` and `stderr` nicely even when they contain `\n` (**main goal of this logger, YEAH!**)
+- [x] displays `stdout` and `stderr` nicely even when they contain `\n`
 - [ ] better line colouring
 - [ ] more test around curious errors
 
