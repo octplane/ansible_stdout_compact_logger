@@ -1,6 +1,6 @@
 ---
 - name: "Test single execution"
-  hosts: first
+  hosts: localhost
   vars:
     version: coucou
   tasks:

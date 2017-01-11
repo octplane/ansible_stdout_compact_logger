@@ -197,9 +197,11 @@ class CallbackModule(CallbackBase):
         self.task_start_preamble = "[%s.%03d] %s | " % (
             self.tark_started.strftime("%Y-%m-%d %H:%M:%S"),
             self.tark_started.microsecond / 1000, section_name)
+
     def v2_runner_on_failed(self, result, ignore_errors=False):
         # pylint: disable=I0011,W0613,W0201
         duration = self._get_duration()
+        host_string = self._host_string(result)
 
         if 'exception' in result._result:
             exception_message = "An exception occurred during task execution."
@@ -215,16 +217,27 @@ class CallbackModule(CallbackBase):
                 self._emit_line(msg, color='red')
 
         self._emit_line("%s | FAILED | %dms" %
-                        (result._host.get_name(),
+                        (host_string,
                          duration), color='red')
         self._emit_line(deep_serialize(result._result), color='cyan')
 
-    def v2_runner_on_ok(self, result):
-        # pylint: disable=I0011,W0201,
-        duration = self._get_duration()
+    def v2_on_file_diff(self, result):
 
-        self._clean_results(result._result, result._task.action)
+        if result._task.loop and 'results' in result._result:
+            for res in result._result['results']:
+                if 'diff' in res and res['diff'] and res.get('changed', False):
+                    diff = self._get_diff(res['diff'])
+                    if diff:
+                        self._emit_line(diff)
 
+        elif 'diff' in result._result and \
+            result._result['diff'] and \
+            result._result.get('changed', False):
+            diff = self._get_diff(result._result['diff'])
+            if diff:
+                self._emit_line(diff)
+
+    def _host_string(self, result):
         delegated_vars = result._result.get('_ansible_delegated_vars', None)
 
         if delegated_vars:
@@ -232,6 +245,16 @@ class CallbackModule(CallbackBase):
                 result._host.get_name(), delegated_vars['ansible_host'])
         else:
             host_string = result._host.get_name()
+
+        return host_string
+
+    def v2_runner_on_ok(self, result):
+        # pylint: disable=I0011,W0201,
+        duration = self._get_duration()
+
+        self._clean_results(result._result, result._task.action)
+
+        host_string = self._host_string(result)
 
         self._clean_results(result._result, result._task.action)
         if result._task.action in ('include', 'include_role'):
@@ -256,7 +279,7 @@ class CallbackModule(CallbackBase):
             ) and not '_ansible_verbose_override' in result._result:
             self._emit_line(deep_serialize(result._result), color='green')
 
-        self._close_section()
+        result._preamble = self.task_start_preamble
 
     def _changed_or_not(self, result, host_string):
         if result.get('changed', False):
@@ -269,36 +292,35 @@ class CallbackModule(CallbackBase):
         return [msg, color]
 
 
-    def _emit_line(self, line, color='normal'):
+    def _emit_line(self, lines, color='normal'):
+
         if self.task_start_preamble is None:
             self._open_section("system")
 
-        sys.stdout.write(self.task_start_preamble)
-        self._display.display(line, color=color)
-
-    def _close_section(self):
-        # pylint: disable=I0011,W0201,
-        self.task_start_preamble = None
+        for line in lines.splitlines():
+            sys.stdout.write(self.task_start_preamble)
+            self._display.display(line, color=color)
 
     def v2_runner_on_unreachable(self, result):
         self._emit_line("%s | UNREACHABLE!: %s" % \
             (result._host.get_name(), result._result.get('msg', '')), color='yellow')
-        self._close_section()
 
     def v2_runner_on_skipped(self, result):
         duration = self._get_duration()
 
         self._emit_line("%s | SKIPPED | %dms" % \
             (result._host.get_name(), duration), color='cyan')
-        self._close_section()
 
 
     def v2_playbook_on_include(self, included_file):
+        self._open_section("system")
+
         msg = 'included: %s for %s' % \
             (included_file._filename, ", ".join([h.name for h in included_file._hosts]))
         self._emit_line(msg, color='cyan')
 
     def v2_playbook_on_stats(self, stats):
+        self._open_section("system")
         self._emit_line("-- Play recap --")
 
         hosts = sorted(stats.processed.keys())

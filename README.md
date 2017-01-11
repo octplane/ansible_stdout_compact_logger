@@ -27,6 +27,7 @@ cf `ansible.cfg`.
 - [x] supports multiple items in task (#1)
 - [x] multi host support
 - [x] correct duration computation
+- [x] diff display support
 - [ ] displays `stdout` and `stderr` nicely even when they contain `\n` (**main goal of this logger, YEAH!**)
 - [ ] better line colouring
 - [ ] more test around curious errors
