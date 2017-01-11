@@ -9,13 +9,6 @@
 cf `ansible.cfg`.
 
 ## Features
-
-<center>
-
-![](shot1.png)
-![Stdout Display with multiline outputs](shot2.png)
-</center>
-
 - [x] one-line display
 - [x] pylint compatible (almost...)
 - [x] displays tasks content in a nice way
@@ -31,6 +24,10 @@ cf `ansible.cfg`.
 - [x] displays `stdout` and `stderr` nicely even when they contain `\n`
 - [ ] better line colouring
 - [ ] more test around curious errors
+
+![](shot1.png)
+![Stdout Display with multiline outputs](shot2.png)
+
 
 ## Test the logger
 
