@@ -18,8 +18,10 @@ import unittest
 
 # Fields we would like to see before the others, in this order, please...
 PREFERED_FIELDS = ['stdout', 'rc', 'stderr', 'start', 'end', 'msg']
-DELETABLE_FIELDS = ['stdout', 'stdout_lines', 'rc', 'stderr', 'start', 'end', 'msg']
-
+# Fields we will delete from the result
+DELETABLE_FIELDS = [
+    'stdout', 'stdout_lines', 'rc', 'stderr', 'start', 'end', 'msg',
+    '_ansible_verbose_always', '_ansible_no_log']
 
 def deep_serialize(data, indent=0):
     # pylint: disable=I0011,E0602,R0912,W0631
@@ -51,7 +53,9 @@ def deep_serialize(data, indent=0):
                 value = data[key]
                 prefix = list_padding + "- %s: " % key
                 output = output + prefix + "%s\n" % \
-                    "\n".join([" " * len(prefix) + line for line in deep_serialize(value, indent ).splitlines()]).strip()
+                    "\n".join([" " * len(prefix) + line
+                               for line in deep_serialize(value, indent)
+                               .splitlines()]).strip()
 
         for key in DELETABLE_FIELDS:
             if key in data.keys():
@@ -157,6 +161,15 @@ class TestStringMethods(unittest.TestCase):
         # print(expected_result)
         self.assertEqual(deep_serialize(hs), expected_result)
 
+    def test_hidden_fields(self):
+        hs = {"_ansible_verbose_always": True}
+        expected_result = """{
+}"""
+        # print(deep_serialize(hs))
+        # print(expected_result)
+        self.assertEqual(deep_serialize(hs), expected_result)
+
+
 class CallbackModule(CallbackBase):
 
     '''
@@ -166,7 +179,7 @@ class CallbackModule(CallbackBase):
 
     CALLBACK_VERSION = 2.0
     CALLBACK_TYPE = 'stdout'
-    CALLBACK_NAME = 'oneline'
+    CALLBACK_NAME = 'anstomlog'
 
     def _get_duration(self):
         end = datetime.now()
@@ -203,6 +216,10 @@ class CallbackModule(CallbackBase):
         self.task_start_preamble = "[%s.%03d] %s | " % (
             self.tark_started.strftime("%Y-%m-%d %H:%M:%S"),
             self.tark_started.microsecond / 1000, section_name)
+
+    def v2_playbook_on_handler_task_start(self, task):
+        self._emit_line("triggering handler | %s " % task.get_name().strip())
+
 
     def v2_runner_on_failed(self, result, ignore_errors=False):
         # pylint: disable=I0011,W0613,W0201
@@ -309,13 +326,13 @@ class CallbackModule(CallbackBase):
 
     def v2_runner_on_unreachable(self, result):
         self._emit_line("%s | UNREACHABLE!: %s" % \
-            (result._host.get_name(), result._result.get('msg', '')), color='yellow')
+            (self._host_string(result), result._result.get('msg', '')), color='yellow')
 
     def v2_runner_on_skipped(self, result):
         duration = self._get_duration()
 
         self._emit_line("%s | SKIPPED | %dms" % \
-            (result._host.get_name(), duration), color='cyan')
+            (self._host_string(result), duration), color='cyan')
 
 
     def v2_playbook_on_include(self, included_file):

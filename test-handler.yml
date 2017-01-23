@@ -1,0 +1,10 @@
+---
+- name: "Test single execution"
+  hosts: localhost
+  tasks:
+    - shell: "true"
+      notify: handler
+  handlers:
+    - name: handler
+      debug:
+        msg: this is a handler
