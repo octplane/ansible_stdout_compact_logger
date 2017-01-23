@@ -14,7 +14,7 @@ cf `ansible.cfg`.
 - [x] displays tasks content in a nice way
 - [x] indents structs, displays empty arrays, strings
 - [x] puts fields on top when available `['stdout', 'rc', 'stderr', 'start', 'end', 'msg']`
-- [x] removes some fields when present `['stdout', 'stdout_lines', 'rc', 'stderr', 'start', 'end', 'msg']` to avoid too much clutter
+- [x] removes some fields when present `[, 'stdout_lines', '_ansible_verbose_always', '_ansible_verbose_override']` to avoid too much clutter
 - [x] reverts to standard logger when more than `vv` verbosity
 - [x] supports `no_log` attribute in Task
 - [x] supports `_ansible_verbose_always` and `_ansible_verbose_override`
@@ -23,6 +23,7 @@ cf `ansible.cfg`.
 - [x] correct duration computation
 - [x] diff display support
 - [x] displays `stdout` and `stderr` nicely even when they contain `\n`
+- [x] displays handlers calls
 - [ ] better line colouring
 - [ ] more test around curious errors
 
