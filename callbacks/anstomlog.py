@@ -1,3 +1,4 @@
+# coding=utf-8
 # pylint: disable=I0011,E0401,C0103,C0111,W0212
 
 from __future__ import (absolute_import, division, print_function)
@@ -66,11 +67,11 @@ def deep_serialize(data, indent=0):
 
         output = output + padding + "}"
     else:
-        string_form = str(data)
+        string_form = "%s" % data
         if len(string_form) == 0:
             return "\"\""
         else:
-            return str(data)
+            return string_form
     return output
 
 class TestStringMethods(unittest.TestCase):
@@ -95,6 +96,11 @@ class TestStringMethods(unittest.TestCase):
         self.assertEqual(
             deep_serialize([""]),
             "[ \"\" ]")
+
+    def test_issue_4(self):
+        self.assertEqual(
+            deep_serialize(["ÉLÉGANT"]),
+            "[ ÉLÉGANT ]")
 
 
     def test_empty_array(self):
