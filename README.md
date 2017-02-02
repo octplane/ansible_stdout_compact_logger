@@ -12,6 +12,7 @@ cf `ansible.cfg`.
 - [x] one-line display
 - [x] pylint compatible (almost...)
 - [x] displays tasks content in a nice way
+- [x] including UTF-8 strings
 - [x] indents structs, displays empty arrays, strings
 - [x] puts fields on top when available `['stdout', 'rc', 'stderr', 'start', 'end', 'msg']`
 - [x] removes some fields when present `[, 'stdout_lines', '_ansible_verbose_always', '_ansible_verbose_override']` to avoid too much clutter
