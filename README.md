@@ -31,7 +31,6 @@ cf `ansible.cfg`.
 ![](shot1.png)
 ![Stdout Display with multiline outputs](shot2.png)
 
-
 ## Test the logger
 
 - clone this repository
@@ -43,3 +42,7 @@ ansible-playbook test-1.yml
 ## License
 
 MIT, see LICENSE file.
+
+## Tips and tricks
+
+- Issue with non-ascii or utf-8 chars? Have a look at #4
