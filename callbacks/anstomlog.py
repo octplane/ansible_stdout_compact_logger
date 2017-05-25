@@ -219,9 +219,9 @@ class CallbackModule(CallbackBase):
     def _open_section(self, section_name):
         # pylint: disable=I0011,W0201
         self.tark_started = datetime.now()
-        self.task_start_preamble = "[%s.%03d] %s | " % (
-            self.tark_started.strftime("%Y-%m-%d %H:%M:%S"),
-            self.tark_started.microsecond / 1000, section_name)
+        self.task_start_preamble = "[%s] %s" % (
+            self.tark_started.strftime("%H:%M:%S"), section_name) + " ..."
+        sys.stdout.write(self.task_start_preamble)
 
     def v2_playbook_on_handler_task_start(self, task):
         self._emit_line("triggering handler | %s " % task.get_name().strip())
