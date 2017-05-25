@@ -28,8 +28,7 @@ cf `ansible.cfg`.
 - [ ] better line colouring
 - [ ] more test around curious errors
 
-![](shot1.png)
-![Stdout Display with multiline outputs](shot2.png)
+![Stdout Display with multiline outputs](shot1.png)
 
 ## Test the logger
 
@@ -46,3 +45,8 @@ MIT, see LICENSE file.
 ## Tips and tricks
 
 - Issue with non-ascii or utf-8 chars? Have a look at #4
+
+## Contributors
+
+- Pierre BAILLET @octplane
+- Frédéric COMBES @marthym

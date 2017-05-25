@@ -6,3 +6,5 @@
        msg: "Ansible est ÉLÉGANT!"
    - name: "Error when using -v"
      command: echo -e "\xe2\x98\xba\x0a"
+   - name: "Error with élégant name"
+     debug: msg="Hello world!"
