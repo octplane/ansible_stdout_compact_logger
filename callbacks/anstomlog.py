@@ -219,9 +219,9 @@ class CallbackModule(CallbackBase):
     def _open_section(self, section_name):
         # pylint: disable=I0011,W0201
         self.tark_started = datetime.now()
-        self.task_start_preamble = "[%s.%03d] %s | " % (
-            self.tark_started.strftime("%Y-%m-%d %H:%M:%S"),
-            self.tark_started.microsecond / 1000, section_name)
+        self.task_start_preamble = "[%s] %s" % (
+            self.tark_started.strftime("%H:%M:%S"), section_name) + " ..."
+        sys.stdout.write(self.task_start_preamble)
 
     def v2_playbook_on_handler_task_start(self, task):
         self._emit_line("triggering handler | %s " % task.get_name().strip())
@@ -291,7 +291,7 @@ class CallbackModule(CallbackBase):
 
         msg, color = self._changed_or_not(result._result, host_string)
 
-        if result._task.loop and 'results' in result._result:
+        if result._task.loop and self._display.verbosity > 0 and 'results' in result._result:
             for item in result._result['results']:
                 msg, color = self._changed_or_not(item, host_string)
                 item_msg = "%s - item=%s" % (msg, self._get_item(item))
@@ -326,8 +326,11 @@ class CallbackModule(CallbackBase):
         if self.task_start_preamble is None:
             self._open_section("system")
 
+        if self.task_start_preamble.endswith(" ..."):
+            sys.stdout.write("\b\b\b\b | ")
+            self.task_start_preamble = " "
+
         for line in lines.splitlines():
-            sys.stdout.write(self.task_start_preamble)
             self._display.display(line, color=color)
 
     def v2_runner_on_unreachable(self, result):
