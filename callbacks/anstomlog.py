@@ -291,7 +291,7 @@ class CallbackModule(CallbackBase):
 
         msg, color = self._changed_or_not(result._result, host_string)
 
-        if result._task.loop and 'results' in result._result:
+        if result._task.loop and self._display.verbosity > 0 and 'results' in result._result:
             for item in result._result['results']:
                 msg, color = self._changed_or_not(item, host_string)
                 item_msg = "%s - item=%s" % (msg, self._get_item(item))
