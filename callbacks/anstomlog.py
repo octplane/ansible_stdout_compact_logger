@@ -326,8 +326,11 @@ class CallbackModule(CallbackBase):
         if self.task_start_preamble is None:
             self._open_section("system")
 
+        if self.task_start_preamble.endswith(" ..."):
+            sys.stdout.write("\b\b\b\b | ")
+            self.task_start_preamble = " "
+
         for line in lines.splitlines():
-            sys.stdout.write(self.task_start_preamble)
             self._display.display(line, color=color)
 
     def v2_runner_on_unreachable(self, result):
