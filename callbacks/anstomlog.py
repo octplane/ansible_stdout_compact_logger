@@ -24,6 +24,9 @@ DELETABLE_FIELDS = [
     'stdout', 'stdout_lines', 'rc', 'stderr', 'start', 'end', 'msg',
     '_ansible_verbose_always', '_ansible_no_log']
 
+CHANGED='yellow'
+UNCHANGED='green'
+
 def deep_serialize(data, indent=0):
     # pylint: disable=I0011,E0602,R0912,W0631
 
@@ -304,19 +307,20 @@ class CallbackModule(CallbackBase):
 
         if (
                 self._display.verbosity > 0 or
-                '_ansible_verbose_always' in result._result
+                '_ansible_verbose_always' in result._result or
+                color == CHANGED
             ) and not '_ansible_verbose_override' in result._result:
-            self._emit_line(deep_serialize(result._result), color='green')
+            self._emit_line(deep_serialize(result._result), color=color)
 
         result._preamble = self.task_start_preamble
 
     def _changed_or_not(self, result, host_string):
         if result.get('changed', False):
             msg = "%s | CHANGED" % host_string
-            color = 'yellow'
+            color = CHANGED
         else:
             msg = "%s | SUCCESS" % host_string
-            color = 'green'
+            color = UNCHANGED
 
         return [msg, color]
 
@@ -335,7 +339,7 @@ class CallbackModule(CallbackBase):
 
     def v2_runner_on_unreachable(self, result):
         self._emit_line("%s | UNREACHABLE!: %s" % \
-            (self._host_string(result), result._result.get('msg', '')), color='yellow')
+                        (self._host_string(result), result._result.get('msg', '')), color=CHANGED)
 
     def v2_runner_on_skipped(self, result):
         duration = self._get_duration()
@@ -361,9 +365,9 @@ class CallbackModule(CallbackBase):
 
             self._emit_line(u"%s : %s %s %s %s" % (
                 hostcolor(h, t),
-                colorize(u'ok', t['ok'], 'green'),
-                colorize(u'changed', t['changed'], 'yellow'),
-                colorize(u'unreachable', t['unreachable'], 'yellow'),
+                colorize(u'ok', t['ok'], UNCHANGED),
+                colorize(u'changed', t['changed'], CHANGED),
+                colorize(u'unreachable', t['unreachable'], CHANGED),
                 colorize(u'failed', t['failures'], 'red')))
 
 if __name__ == '__main__':
