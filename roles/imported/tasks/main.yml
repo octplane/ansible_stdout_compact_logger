@@ -1,0 +1,6 @@
+---
+
+- name: First task of test-role
+  file:
+    path: /tmp/test
+    state: touch

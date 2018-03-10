@@ -1,0 +1,9 @@
+---
+- name: "Test roles import"
+  hosts: localhost
+  tasks:
+    - command: "sleep 1"
+
+  roles:
+    - test-role
+    

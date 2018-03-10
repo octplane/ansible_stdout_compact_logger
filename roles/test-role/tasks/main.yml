@@ -1,0 +1,10 @@
+---
+
+- name: Import roles
+  include_role: 
+    name: imported
+
+- name: Clean test
+  file:
+    path: /tmp/test
+    state: absent

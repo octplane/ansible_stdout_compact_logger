@@ -218,12 +218,17 @@ class CallbackModule(CallbackBase):
     def v2_playbook_on_task_start(self, task, is_conditional):
         # pylint: disable=I0011,W0613
         self._open_section(task.get_name())
+        self._task_level += 1
 
     def _open_section(self, section_name):
         # pylint: disable=I0011,W0201
         self.tark_started = datetime.now()
-        self.task_start_preamble = "[%s] %s" % (
-            self.tark_started.strftime("%H:%M:%S"), section_name) + " ..."
+
+        prefix = ''
+        if self._task_level > 0:
+            prefix = '  ➥'
+
+        self.task_start_preamble = "[{}]{} {} ...".format(self.tark_started.strftime("%H:%M:%S"), prefix.encode('utf-8'), section_name).encode("utf8")
         sys.stdout.write(self.task_start_preamble)
 
     def v2_playbook_on_handler_task_start(self, task):
@@ -289,9 +294,12 @@ class CallbackModule(CallbackBase):
         host_string = self._host_string(result)
 
         self._clean_results(result._result, result._task.action)
+
         if result._task.action in ('include', 'include_role'):
+            sys.stdout.write("\b\b\b\b    \n")
             return
 
+        self._task_level = 0
         msg, color = self._changed_or_not(result._result, host_string)
 
         if result._task.loop and self._display.verbosity > 0 and 'results' in result._result:
@@ -369,6 +377,11 @@ class CallbackModule(CallbackBase):
                 colorize(u'changed', t['changed'], CHANGED),
                 colorize(u'unreachable', t['unreachable'], CHANGED),
                 colorize(u'failed', t['failures'], 'red')))
+
+    def __init__(self, *args, **kwargs):
+        super(CallbackModule, self).__init__(*args, **kwargs)
+        self._task_level = 0
+        reload(sys).setdefaultencoding('utf8')
 
 if __name__ == '__main__':
     unittest.main()
