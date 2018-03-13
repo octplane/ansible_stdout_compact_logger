@@ -24,8 +24,9 @@ DELETABLE_FIELDS = [
     'stdout', 'stdout_lines', 'rc', 'stderr', 'start', 'end', 'msg',
     '_ansible_verbose_always', '_ansible_no_log']
 
-CHANGED='yellow'
-UNCHANGED='green'
+CHANGED = 'yellow'
+UNCHANGED = 'green'
+
 
 def deep_serialize(data, indent=0):
     # pylint: disable=I0011,E0602,R0912,W0631
@@ -36,7 +37,9 @@ def deep_serialize(data, indent=0):
             return "[]"
         output = "[ "
         if len(data) == 1:
-            output = output + ("\n" + padding).join(deep_serialize(data[0], 0).splitlines()) + " ]"
+            output = output + \
+                ("\n" +
+                 padding).join(deep_serialize(data[0], 0).splitlines()) + " ]"
         else:
             list_padding = " " * (indent + 1) * 2
 
@@ -66,7 +69,8 @@ def deep_serialize(data, indent=0):
                 del data[key]
 
         for key, value in data.items():
-            output = output + list_padding + "- %s: %s\n" % (key, deep_serialize(value, indent + 1))
+            output = output + list_padding + \
+                "- %s: %s\n" % (key, deep_serialize(value, indent + 1))
 
         output = output + padding + "}"
     else:
@@ -76,6 +80,7 @@ def deep_serialize(data, indent=0):
         else:
             return string_form
     return output
+
 
 class TestStringMethods(unittest.TestCase):
 
@@ -105,7 +110,6 @@ class TestStringMethods(unittest.TestCase):
             deep_serialize(["ÉLÉGANT"]),
             "[ ÉLÉGANT ]")
 
-
     def test_empty_array(self):
         self.assertEqual(
             deep_serialize(self.test_structure['stdout_lines']),
@@ -117,13 +121,12 @@ class TestStringMethods(unittest.TestCase):
         self.assertEqual(deep_serialize(hs), expected_result)
 
     def test_hash_array(self):
-        hs = {u'cmd':[u'false']}
+        hs = {u'cmd': [u'false']}
         expected_result = "{\n  - cmd: [ false ]\n}"
         self.assertEqual(deep_serialize(hs), expected_result)
 
-
     def test_hash_array2(self):
-        hs = {u'cmd':['one', 'two']}
+        hs = {u'cmd': ['one', 'two']}
         expected_result = """{
   - cmd: [ 
     - one
@@ -132,14 +135,13 @@ class TestStringMethods(unittest.TestCase):
 }"""
         self.assertEqual(deep_serialize(hs), expected_result)
 
-
     def test_favorite_hash(self):
         hs = {"cmd": "toto", "rc": 12}
         expected_result = "{\n  - rc: 12\n  - cmd: toto\n}"
         self.assertEqual(deep_serialize(hs), expected_result)
 
     def test_nested(self):
-        hs = {u'cmd':{'bar':['one', 'two']}}
+        hs = {u'cmd': {'bar': ['one', 'two']}}
         expected_result = """{
   - cmd: {
     - bar: [ 
@@ -193,7 +195,8 @@ class CallbackModule(CallbackBase):
     def _get_duration(self):
         end = datetime.now()
         total_duration = (end - self.tark_started)
-        duration = total_duration.microseconds / 1000 + total_duration.total_seconds() * 1000
+        duration = total_duration.microseconds / \
+            1000 + total_duration.total_seconds() * 1000
         return duration
 
     def _command_generic_msg(self, hostname, result, caption):
@@ -204,7 +207,8 @@ class CallbackModule(CallbackBase):
             if 'stderr' in result and result['stderr']:
                 stderr = result.get('stderr', '')
                 return "%s | %s | %sms | rc=%s | stdout: \n%s\n\n\t\t\t\tstderr: %s" % \
-                    (hostname, caption, duration, result.get('rc', 0), stdout, stderr)
+                    (hostname, caption, duration,
+                     result.get('rc', 0), stdout, stderr)
             else:
                 if len(stdout) > 0:
                     return "%s | %s | %sms | rc=%s | stdout: \n%s\n" % \
@@ -228,12 +232,13 @@ class CallbackModule(CallbackBase):
         if self._task_level > 0:
             prefix = '  ➥'
 
-        self.task_start_preamble = "[{}]{} {} ...".format(self.tark_started.strftime("%H:%M:%S"), prefix.encode('utf-8'), section_name).encode("utf8")
+        self.task_start_preamble = "[{}]{} {} ...".format(
+            self.tark_started.strftime(
+                "%H:%M:%S"), prefix.encode('utf-8'), section_name).encode("utf8")
         sys.stdout.write(self.task_start_preamble)
 
     def v2_playbook_on_handler_task_start(self, task):
         self._emit_line("triggering handler | %s " % task.get_name().strip())
-
 
     def v2_runner_on_failed(self, result, ignore_errors=False):
         # pylint: disable=I0011,W0613,W0201
@@ -249,7 +254,8 @@ class CallbackModule(CallbackBase):
                     "To see the full traceback, use -vvv. The error was: %s" % error
             else:
                 msg = exception_message + \
-                    "The full traceback is:\n" + result._result['exception'].replace('\n', '')
+                    "The full traceback is:\n" + \
+                    result._result['exception'].replace('\n', '')
 
                 self._emit_line(msg, color='red')
 
@@ -268,8 +274,8 @@ class CallbackModule(CallbackBase):
                         self._emit_line(diff)
 
         elif 'diff' in result._result and \
-            result._result['diff'] and \
-            result._result.get('changed', False):
+                result._result['diff'] and \
+                result._result.get('changed', False):
             diff = self._get_diff(result._result['diff'])
             if diff:
                 self._emit_line(diff)
@@ -314,10 +320,9 @@ class CallbackModule(CallbackBase):
         self._handle_warnings(result._result)
 
         if (
-                self._display.verbosity > 0 or
-                '_ansible_verbose_always' in result._result or
-                color == CHANGED
-            ) and not '_ansible_verbose_override' in result._result:
+            self._display.verbosity > 0 or
+            '_ansible_verbose_always' in result._result
+        ) and not '_ansible_verbose_override' in result._result:
             self._emit_line(deep_serialize(result._result), color=color)
 
         result._preamble = self.task_start_preamble
@@ -332,7 +337,6 @@ class CallbackModule(CallbackBase):
 
         return [msg, color]
 
-
     def _emit_line(self, lines, color='normal'):
 
         if self.task_start_preamble is None:
@@ -346,21 +350,21 @@ class CallbackModule(CallbackBase):
             self._display.display(line, color=color)
 
     def v2_runner_on_unreachable(self, result):
-        self._emit_line("%s | UNREACHABLE!: %s" % \
+        self._emit_line("%s | UNREACHABLE!: %s" %
                         (self._host_string(result), result._result.get('msg', '')), color=CHANGED)
 
     def v2_runner_on_skipped(self, result):
         duration = self._get_duration()
 
-        self._emit_line("%s | SKIPPED | %dms" % \
-            (self._host_string(result), duration), color='cyan')
-
+        self._emit_line("%s | SKIPPED | %dms" %
+                        (self._host_string(result), duration), color='cyan')
 
     def v2_playbook_on_include(self, included_file):
         self._open_section("system")
 
         msg = 'included: %s for %s' % \
-            (included_file._filename, ", ".join([h.name for h in included_file._hosts]))
+            (included_file._filename, ", ".join(
+                [h.name for h in included_file._hosts]))
         self._emit_line(msg, color='cyan')
 
     def v2_playbook_on_stats(self, stats):
@@ -382,6 +386,7 @@ class CallbackModule(CallbackBase):
         super(CallbackModule, self).__init__(*args, **kwargs)
         self._task_level = 0
         reload(sys).setdefaultencoding('utf8')
+
 
 if __name__ == '__main__':
     unittest.main()
