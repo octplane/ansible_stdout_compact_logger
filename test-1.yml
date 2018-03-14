@@ -13,3 +13,6 @@
         that:
           - "{{ version | int }} != 0"
         msg: "'version' must be a number and > 0, is \"{{version}}\""
+        
+  roles:
+    - test-role
