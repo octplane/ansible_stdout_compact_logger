@@ -244,6 +244,7 @@ class CallbackModule(CallbackBase):
         # pylint: disable=I0011,W0613,W0201
         duration = self._get_duration()
         host_string = self._host_string(result)
+        self._task_level = 0
 
         if 'exception' in result._result:
             exception_message = "An exception occurred during task execution."
@@ -350,11 +351,13 @@ class CallbackModule(CallbackBase):
             self._display.display(line, color=color)
 
     def v2_runner_on_unreachable(self, result):
+        self._task_level = 0
         self._emit_line("%s | UNREACHABLE!: %s" %
                         (self._host_string(result), result._result.get('msg', '')), color=CHANGED)
 
     def v2_runner_on_skipped(self, result):
         duration = self._get_duration()
+        self._task_level = 0
 
         self._emit_line("%s | SKIPPED | %dms" %
                         (self._host_string(result), duration), color='cyan')
