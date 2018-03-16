@@ -28,7 +28,13 @@ cf `ansible.cfg`.
 - [ ] better line colouring
 - [ ] more test around curious errors
 
-![Stdout Display with multiline outputs](shot1.png)
+## Without anstomlog
+
+![Stdout Display without anstomlog](img/without_anstomlog.png)
+
+## With anstomlog
+
+![Stdout Display with multiline outputs](img/with_anstomlog.png)
 
 ## Test the logger
 
