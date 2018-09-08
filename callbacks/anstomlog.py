@@ -234,7 +234,7 @@ class CallbackModule(CallbackBase):
 
         self.task_start_preamble = "[{}]{} {} ...".format(
             self.tark_started.strftime(
-                "%H:%M:%S"), prefix.encode('utf-8'), section_name).encode("utf8")
+                "%H:%M:%S"), prefix, section_name)
         sys.stdout.write(self.task_start_preamble)
 
     def v2_playbook_on_handler_task_start(self, task):
@@ -388,7 +388,11 @@ class CallbackModule(CallbackBase):
     def __init__(self, *args, **kwargs):
         super(CallbackModule, self).__init__(*args, **kwargs)
         self._task_level = 0
-        reload(sys).setdefaultencoding('utf8')
+        # python2 only
+        try:
+            reload(sys).setdefaultencoding('utf8')
+        except:
+            pass
 
 
 if __name__ == '__main__':
