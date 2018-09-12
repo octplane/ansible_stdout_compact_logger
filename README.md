@@ -25,6 +25,7 @@ cf `ansible.cfg`.
 - [x] diff display support
 - [x] displays `stdout` and `stderr` nicely even when they contain `\n`
 - [x] displays handlers calls
+- [x] Python 2/3 compatible
 - [ ] better line colouring
 - [ ] more test around curious errors
 
