@@ -74,7 +74,7 @@ def deep_serialize(data, indent=0):
 
         output = output + padding + "}"
     else:
-        string_form = "%s" % data
+        string_form = str(data)
         if len(string_form) == 0:
             return "\"\""
         else:
@@ -128,7 +128,7 @@ class TestStringMethods(unittest.TestCase):
     def test_hash_array2(self):
         hs = {u'cmd': ['one', 'two']}
         expected_result = """{
-  - cmd: [ 
+  - cmd: [
     - one
     - two
    ]
@@ -144,7 +144,7 @@ class TestStringMethods(unittest.TestCase):
         hs = {u'cmd': {'bar': ['one', 'two']}}
         expected_result = """{
   - cmd: {
-    - bar: [ 
+    - bar: [
       - one
       - two
      ]
@@ -155,7 +155,7 @@ class TestStringMethods(unittest.TestCase):
     def test_multiline_single(self):
         # pylint: disable=I0011,C0303
         hs = [["foo", "bar"]]
-        expected_result = """[ [ 
+        expected_result = """[ [
   - foo
   - bar
  ] ]"""
