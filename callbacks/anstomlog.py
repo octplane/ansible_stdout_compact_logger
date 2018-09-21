@@ -263,7 +263,7 @@ class CallbackModule(CallbackBase):
         self._emit_line("%s | FAILED | %dms" %
                         (host_string,
                          duration), color='red')
-        self._emit_line(deep_serialize(result._result), color='cyan')
+        self._emit_line(deep_serialize(result._result), color='red')
 
     def v2_on_file_diff(self, result):
 
