@@ -128,7 +128,7 @@ class TestStringMethods(unittest.TestCase):
     def test_hash_array2(self):
         hs = {u'cmd': ['one', 'two']}
         expected_result = """{
-  - cmd: [
+  - cmd: [ 
     - one
     - two
    ]
@@ -144,7 +144,7 @@ class TestStringMethods(unittest.TestCase):
         hs = {u'cmd': {'bar': ['one', 'two']}}
         expected_result = """{
   - cmd: {
-    - bar: [
+    - bar: [ 
       - one
       - two
      ]
@@ -155,7 +155,7 @@ class TestStringMethods(unittest.TestCase):
     def test_multiline_single(self):
         # pylint: disable=I0011,C0303
         hs = [["foo", "bar"]]
-        expected_result = """[ [
+        expected_result = """[ [ 
   - foo
   - bar
  ] ]"""
@@ -221,10 +221,10 @@ class CallbackModule(CallbackBase):
 
     def v2_playbook_on_task_start(self, task, is_conditional):
         # pylint: disable=I0011,W0613
-        self._open_section(task.get_name())
+        self._open_section(task.get_name(), task.get_path())
         self._task_level += 1
 
-    def _open_section(self, section_name):
+    def _open_section(self, section_name, path = None):
         # pylint: disable=I0011,W0201
         self.tark_started = datetime.now()
 
@@ -232,10 +232,15 @@ class CallbackModule(CallbackBase):
         if self._task_level > 0:
             prefix = '  ➥'
 
+        ts = self.tark_started.strftime(
+                "%H:%M:%S")
+        if self._display.verbosity > 1:
+            if path:
+                self._emit_line("[{}]: {}".format(ts, path))
         self.task_start_preamble = "[{}]{} {} ...".format(
-            self.tark_started.strftime(
-                "%H:%M:%S"), prefix, section_name)
+            ts , prefix, section_name)
         sys.stdout.write(self.task_start_preamble)
+
 
     def v2_playbook_on_handler_task_start(self, task):
         self._emit_line("triggering handler | %s " % task.get_name().strip())
@@ -388,6 +393,7 @@ class CallbackModule(CallbackBase):
     def __init__(self, *args, **kwargs):
         super(CallbackModule, self).__init__(*args, **kwargs)
         self._task_level = 0
+        self.task_start_preamble = None
         # python2 only
         try:
             reload(sys).setdefaultencoding('utf8')
