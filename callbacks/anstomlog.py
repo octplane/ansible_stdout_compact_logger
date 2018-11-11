@@ -195,8 +195,7 @@ class CallbackModule(CallbackBase):
     def _get_duration(self):
         end = datetime.now()
         total_duration = (end - self.tark_started)
-        duration = total_duration.microseconds / \
-            1000 + total_duration.total_seconds() * 1000
+        duration = total_duration.total_seconds() * 1000
         return duration
 
     def _command_generic_msg(self, hostname, result, caption):
