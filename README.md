@@ -57,3 +57,5 @@ MIT, see LICENSE file.
 
 - Pierre BAILLET @octplane
 - Frédéric COMBES @marthym
+- @tterranigma
+- @OurFriendIrony
