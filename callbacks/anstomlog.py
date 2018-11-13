@@ -22,7 +22,8 @@ PREFERED_FIELDS = ['stdout', 'rc', 'stderr', 'start', 'end', 'msg']
 # Fields we will delete from the result
 DELETABLE_FIELDS = [
     'stdout', 'stdout_lines', 'rc', 'stderr', 'start', 'end', 'msg',
-    '_ansible_verbose_always', '_ansible_no_log']
+    '_ansible_verbose_always', '_ansible_no_log', 'invocation', '_ansible_parsed',
+    '_ansible_item_result', '_ansible_ignore_errors', '_ansible_item_label']
 
 CHANGED = 'yellow'
 UNCHANGED = 'green'
