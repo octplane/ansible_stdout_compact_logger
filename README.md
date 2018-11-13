@@ -59,3 +59,4 @@ MIT, see LICENSE file.
 - Frédéric COMBES @marthym
 - @tterranigma
 - @OurFriendIrony
+- Farzad FARID @farzy
