@@ -6,16 +6,16 @@ __metaclass__ = type
 
 import sys
 from datetime import datetime
+import unittest
 
 try:
-    from ansible.utils.color import colorize, hostcolor
+    from ansible.utils.color import colorize, hostcolor, stringc
     from ansible.plugins.callback import CallbackBase
 except ImportError:
     class CallbackBase:
         # pylint: disable=I0011,R0903
         pass
 
-import unittest
 
 # Fields we would like to see before the others, in this order, please...
 PREFERED_FIELDS = ['stdout', 'rc', 'stderr', 'start', 'end', 'msg']
@@ -27,6 +27,7 @@ DELETABLE_FIELDS = [
 
 CHANGED = 'yellow'
 UNCHANGED = 'green'
+DIMMED = 'dark gray'
 
 
 def deep_serialize(data, indent=0):
@@ -224,7 +225,7 @@ class CallbackModule(CallbackBase):
         self._open_section(task.get_name(), task.get_path())
         self._task_level += 1
 
-    def _open_section(self, section_name, path = None):
+    def _open_section(self, section_name, path=None):
         # pylint: disable=I0011,W0201
         self.tark_started = datetime.now()
 
@@ -232,15 +233,13 @@ class CallbackModule(CallbackBase):
         if self._task_level > 0:
             prefix = '  ➥'
 
-        ts = self.tark_started.strftime(
-                "%H:%M:%S")
-        if self._display.verbosity > 1:
-            if path:
-                self._emit_line("[{}]: {}".format(ts, path))
-        self.task_start_preamble = "[{}]{} {} ...".format(
-            ts , prefix, section_name)
-        sys.stdout.write(self.task_start_preamble)
+        ts = self.tark_started.strftime("%H:%M:%S")
 
+        if self._display.verbosity > 1 and path:
+            self.task_start_preamble = "[{}]: {}".format(ts, path)
+        else:
+            self.task_start_preamble = "[{}]{} {} ".format(
+                ts, prefix, section_name)
 
     def v2_playbook_on_handler_task_start(self, task):
         self._emit_line("triggering handler | %s " % task.get_name().strip())
@@ -257,7 +256,8 @@ class CallbackModule(CallbackBase):
                 # extract just the actual error message from the exception text
                 error = result._result['exception'].strip().split('\n')[-1]
                 msg = exception_message + \
-                    "To see the full traceback, use -vvv. The error was: %s" % error
+                    "To see the full traceback, use -vvv. The error was: %s" \
+                    % error
             else:
                 msg = exception_message + \
                     "The full traceback is:\n" + \
@@ -307,28 +307,24 @@ class CallbackModule(CallbackBase):
 
         self._clean_results(result._result, result._task.action)
 
-        if result._task.action in ('include', 'include_role'):
-            sys.stdout.write("\b\b\b\b    \n")
-            return
-
         self._task_level = 0
         msg, color = self._changed_or_not(result._result, host_string)
 
-        if result._task.loop and self._display.verbosity > 0 and 'results' in result._result:
+        if result._task.loop and self._display.verbosity > 0 and \
+                'results' in result._result:
             for item in result._result['results']:
                 msg, color = self._changed_or_not(item, host_string)
-                item_msg = "%s - item=%s" % (msg, self._get_item(item))
-                self._emit_line("%s | %dms" %
-                                (item_msg, duration), color=color)
+                item_msg = "{} - item={}".format(msg, self._get_item(item))
+                self._emit_line(
+                    "{} | {:.0f}ms".format(item_msg, duration), color=color)
         else:
-            self._emit_line("%s | %dms" %
-                            (msg, duration), color=color)
+            self._emit_line("{} | {:.0f}ms".format(msg, duration), color=color)
         self._handle_warnings(result._result)
 
         if (
             self._display.verbosity > 0 or
             '_ansible_verbose_always' in result._result
-        ) and not '_ansible_verbose_override' in result._result:
+        ) and '_ansible_verbose_override' not in result._result:
             self._emit_line(deep_serialize(result._result), color=color)
 
         result._preamble = self.task_start_preamble
@@ -353,7 +349,25 @@ class CallbackModule(CallbackBase):
             self.task_start_preamble = " "
 
         for line in lines.splitlines():
+            self._print_preamble()
             self._display.display(line, color=color)
+
+    def _print_preamble(self):
+        if self._last_printed_preamble == self.task_start_preamble:
+            sys.stdout.write(stringc(self.task_start_preamble, DIMMED))
+        else:
+            sys.stdout.write(self.task_start_preamble)
+
+        self._last_printed_preamble = self.task_start_preamble
+
+    def v2_runner_item_on_ok(self, result):
+        pass
+
+    def v2_runner_item_on_failed(self, result):
+        pass
+
+    def v2_runner_item_on_skipped(self, result):
+        pass
 
     def v2_runner_on_unreachable(self, result):
         self._task_level = 0
@@ -394,6 +408,7 @@ class CallbackModule(CallbackBase):
         super(CallbackModule, self).__init__(*args, **kwargs)
         self._task_level = 0
         self.task_start_preamble = None
+        self._last_printed_preamble = None
         # python2 only
         try:
             reload(sys).setdefaultencoding('utf8')
