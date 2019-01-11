@@ -1,0 +1,9 @@
+- hosts: all
+  gather_facts: False
+  tasks:
+    - name: message loop
+      debug:
+        msg: "Hello {{item}}"
+      with_items:
+        - alice
+        - bob
