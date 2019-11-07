@@ -60,3 +60,5 @@ MIT, see LICENSE file.
 - @tterranigma
 - @OurFriendIrony
 - Farzad FARID @farzy
+- Jérôme BAROTIN @jbarotin
+
