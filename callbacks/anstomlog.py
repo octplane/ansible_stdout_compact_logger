@@ -343,7 +343,7 @@ class CallbackModule(CallbackBase):
 
         return [msg, color]
 
-    def _emit_line(self, lines, color='normal'):
+    def _emit_line(self, lines, color='green'):
 
         if self.task_start_preamble is None:
             self._open_section("system")
