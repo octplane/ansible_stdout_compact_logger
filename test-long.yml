@@ -1,0 +1,19 @@
+---
+- name: "Test single execution"
+  hosts: localhost
+  vars:
+    version: coucou
+  tasks:
+    - name: Long running task (1m2s)
+      command: "sleep 62"
+    - name: "Secret action"
+      command: "sleep 1"
+      no_log: True
+    - name: "Validate version is a number, > 0"
+      assert:
+        that:
+          - "{{ version | int }} != 0"
+        msg: "'version' must be a number and > 0, is \"{{version}}\""
+
+  roles:
+    - test-role

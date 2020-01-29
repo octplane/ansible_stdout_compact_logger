@@ -197,7 +197,11 @@ class CallbackModule(CallbackBase):
         end = datetime.now()
         total_duration = (end - self.tark_started)
         seconds = total_duration.total_seconds()
-        if seconds >= 1:
+        if seconds >= 60:
+            seconds_remaining = seconds % 60
+            minutes = (seconds - seconds_remaining) / 60
+            duration = "{0:.0f}m{1:.0f}s".format(minutes, seconds_remaining)
+        elif seconds >= 1:
             duration = "{0:.2f}s".format(seconds)
         else:
             duration = "{0:.0f}ms".format(seconds * 1000)
@@ -228,7 +232,7 @@ class CallbackModule(CallbackBase):
         self._open_section(task.get_name(), task.get_path())
         self._task_level += 1
 
-    def _open_section(self, section_name, path = None):
+    def _open_section(self, section_name, path=None):
         # pylint: disable=I0011,W0201
         self.tark_started = datetime.now()
 
@@ -237,14 +241,13 @@ class CallbackModule(CallbackBase):
             prefix = '  ➥'
 
         ts = self.tark_started.strftime(
-                "%H:%M:%S")
+            "%H:%M:%S")
         if self._display.verbosity > 1:
             if path:
                 self._emit_line("[{}]: {}".format(ts, path))
         self.task_start_preamble = "[{}]{} {} ...".format(
-            ts , prefix, section_name)
+            ts, prefix, section_name)
         sys.stdout.write(self.task_start_preamble)
-
 
     def v2_playbook_on_handler_task_start(self, task):
         self._emit_line("triggering handler | %s " % task.get_name().strip())
