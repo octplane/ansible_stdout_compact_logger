@@ -196,7 +196,11 @@ class CallbackModule(CallbackBase):
     def _get_duration(self):
         end = datetime.now()
         total_duration = (end - self.tark_started)
-        duration = total_duration.total_seconds() * 1000
+        seconds = total_duration.total_seconds()
+        if seconds >= 1:
+            duration = "{0:.2f}s".format(seconds)
+        else:
+            duration = "{0:.0f}ms".format(seconds * 1000)
         return duration
 
     def _command_generic_msg(self, hostname, result, caption):
@@ -206,18 +210,18 @@ class CallbackModule(CallbackBase):
         if self._display.verbosity > 0:
             if 'stderr' in result and result['stderr']:
                 stderr = result.get('stderr', '')
-                return "%s | %s | %sms | rc=%s | stdout: \n%s\n\n\t\t\t\tstderr: %s" % \
+                return "%s | %s | %s | rc=%s | stdout: \n%s\n\n\t\t\t\tstderr: %s" % \
                     (hostname, caption, duration,
                      result.get('rc', 0), stdout, stderr)
             else:
                 if len(stdout) > 0:
-                    return "%s | %s | %sms | rc=%s | stdout: \n%s\n" % \
+                    return "%s | %s | %s | rc=%s | stdout: \n%s\n" % \
                         (hostname, caption, duration, result.get('rc', 0), stdout)
                 else:
-                    return "%s | %s | %sms | rc=%s | no stdout" % \
+                    return "%s | %s | %s | rc=%s | no stdout" % \
                         (hostname, caption, duration, result.get('rc', 0))
         else:
-            return "%s | %s | %sms | rc=%s" % (hostname, caption, duration, result.get('rc', 0))
+            return "%s | %s | %s | rc=%s" % (hostname, caption, duration, result.get('rc', 0))
 
     def v2_playbook_on_task_start(self, task, is_conditional):
         # pylint: disable=I0011,W0613
@@ -265,7 +269,7 @@ class CallbackModule(CallbackBase):
 
                 self._emit_line(msg, color='red')
 
-        self._emit_line("%s | FAILED | %dms" %
+        self._emit_line("%s | FAILED | %s" %
                         (host_string,
                          duration), color='red')
         self._emit_line(deep_serialize(result._result), color='red')
@@ -318,10 +322,10 @@ class CallbackModule(CallbackBase):
             for item in result._result['results']:
                 msg, color = self._changed_or_not(item, host_string)
                 item_msg = "%s - item=%s" % (msg, self._get_item(item))
-                self._emit_line("%s | %dms" %
+                self._emit_line("%s | %s" %
                                 (item_msg, duration), color=color)
         else:
-            self._emit_line("%s | %dms" %
+            self._emit_line("%s | %s" %
                             (msg, duration), color=color)
         self._handle_warnings(result._result)
 
@@ -364,7 +368,7 @@ class CallbackModule(CallbackBase):
         duration = self._get_duration()
         self._task_level = 0
 
-        self._emit_line("%s | SKIPPED | %dms" %
+        self._emit_line("%s | SKIPPED | %s" %
                         (self._host_string(result), duration), color='cyan')
 
     def v2_playbook_on_include(self, included_file):
