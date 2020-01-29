@@ -22,6 +22,7 @@ cf `ansible.cfg`.
 - [x] supports multiple items in task (#1)
 - [x] multi host support
 - [x] correct duration computation
+- [x] Display duration in minutes when tasks last for more than 1 minute
 - [x] diff display support
 - [x] displays `stdout` and `stderr` nicely even when they contain `\n`
 - [x] displays handlers calls
@@ -61,4 +62,5 @@ MIT, see LICENSE file.
 - @OurFriendIrony
 - Farzad FARID @farzy
 - Jérôme BAROTIN @jbarotin
+- Dale Henries @dalehenries
 
