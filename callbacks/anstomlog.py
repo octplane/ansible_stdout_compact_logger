@@ -10,10 +10,13 @@ from datetime import datetime
 try:
     from ansible.utils.color import colorize, hostcolor
     from ansible.plugins.callback import CallbackBase
+    from ansible import constants as C
 except ImportError:
     class CallbackBase:
         # pylint: disable=I0011,R0903
         pass
+    class C:
+        COLOR_OK = 'green'
 
 import unittest
 
@@ -24,10 +27,6 @@ DELETABLE_FIELDS = [
     'stdout', 'stdout_lines', 'rc', 'stderr', 'start', 'end', 'msg',
     '_ansible_verbose_always', '_ansible_no_log', 'invocation', '_ansible_parsed',
     '_ansible_item_result', '_ansible_ignore_errors', '_ansible_item_label']
-
-CHANGED = 'yellow'
-UNCHANGED = 'green'
-
 
 def deep_serialize(data, indent=0):
     # pylint: disable=I0011,E0602,R0912,W0631
@@ -268,12 +267,12 @@ class CallbackModule(CallbackBase):
                     "The full traceback is:\n" + \
                     result._result['exception'].replace('\n', '')
 
-                self._emit_line(msg, color='red')
+                self._emit_line(msg, color=C.COLOR_ERROR)
 
         self._emit_line("%s | FAILED | %s" %
                         (host_string,
-                         duration), color='red')
-        self._emit_line(deep_serialize(result._result), color='red')
+                         duration), color=C.COLOR_ERROR)
+        self._emit_line(deep_serialize(result._result), color=C.COLOR_ERROR)
 
     def v2_on_file_diff(self, result):
 
@@ -341,14 +340,14 @@ class CallbackModule(CallbackBase):
     def _changed_or_not(result, host_string):
         if result.get('changed', False):
             msg = "%s | CHANGED" % host_string
-            color = CHANGED
+            color = C.COLOR_CHANGED
         else:
             msg = "%s | SUCCESS" % host_string
-            color = UNCHANGED
+            color = C.COLOR_OK
 
         return [msg, color]
 
-    def _emit_line(self, lines, color='green'):
+    def _emit_line(self, lines, color=C.COLOR_OK):
 
         if self.task_start_preamble is None:
             self._open_section("system")
@@ -361,14 +360,14 @@ class CallbackModule(CallbackBase):
             self._display.display(line, color=color)
 
     def v2_runner_on_unreachable(self, result):
-        self._emit_line("%s | UNREACHABLE!: %s" %
-                        (self._host_string(result), result._result.get('msg', '')), color=CHANGED)
+        self._emit_line('{} | UNREACHABLE!: {}'.format(
+            self._host_string(result), result._result.get('msg', '')), color=C.COLOR_CHANGED)
 
     def v2_runner_on_skipped(self, result):
         duration = self._get_duration()
 
         self._emit_line("%s | SKIPPED | %s" %
-                        (self._host_string(result), duration), color='cyan')
+                        (self._host_string(result), duration), color=C.COLOR_SKIP)
 
     def v2_playbook_on_include(self, included_file):
         if self.task_start_preamble.endswith(" ..."):
@@ -377,7 +376,7 @@ class CallbackModule(CallbackBase):
                 ", ".join([h.name for h in included_file._hosts]),
                 'INCLUDED',
                 os.path.basename(included_file._filename))
-            self._display.display(msg, color='cyan')
+            self._display.display(msg, color=C.COLOR_SKIP)
 
     def v2_playbook_on_stats(self, stats):
         self._open_section("system")
@@ -389,10 +388,10 @@ class CallbackModule(CallbackBase):
 
             self._emit_line(u"%s : %s %s %s %s" % (
                 hostcolor(h, t),
-                colorize(u'ok', t['ok'], UNCHANGED),
-                colorize(u'changed', t['changed'], CHANGED),
-                colorize(u'unreachable', t['unreachable'], CHANGED),
-                colorize(u'failed', t['failures'], 'red')))
+                colorize(u'ok', t['ok'], C.COLOR_OK),
+                colorize(u'changed', t['changed'], C.COLOR_CHANGED),
+                colorize(u'unreachable', t['unreachable'], C.COLOR_UNREACHABLE),
+                colorize(u'failed', t['failures'], C.COLOR_ERROR)))
 
     def __init__(self, *args, **kwargs):
         super(CallbackModule, self).__init__(*args, **kwargs)
