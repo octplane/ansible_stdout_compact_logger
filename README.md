@@ -44,7 +44,7 @@ cf `ansible.cfg`.
 ```
 ansible-playbook test-1.yml
 ```
-- to run the tests, call `python2.6 callbacks/anstomlog.py`
+- to run the tests, call `python callbacks/anstomlog.py`
 
 ## License
 

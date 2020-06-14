@@ -1,0 +1,11 @@
+---
+
+- name: First imported task of test-role
+  file:
+    path: /tmp/test
+    state: touch
+
+- name: Second imported task of test-role
+  file:
+    path: /tmp/test
+    state: absent

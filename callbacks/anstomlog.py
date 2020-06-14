@@ -1,19 +1,22 @@
 # coding=utf-8
-# pylint: disable=I0011,E0401,C0103,C0111,W0212
 
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
 import sys
+import os
 from datetime import datetime
 
 try:
     from ansible.utils.color import colorize, hostcolor
     from ansible.plugins.callback import CallbackBase
+    from ansible import constants as C
 except ImportError:
     class CallbackBase:
         # pylint: disable=I0011,R0903
         pass
+    class C:
+        COLOR_OK = 'green'
 
 import unittest
 
@@ -24,10 +27,6 @@ DELETABLE_FIELDS = [
     'stdout', 'stdout_lines', 'rc', 'stderr', 'start', 'end', 'msg',
     '_ansible_verbose_always', '_ansible_no_log', 'invocation', '_ansible_parsed',
     '_ansible_item_result', '_ansible_ignore_errors', '_ansible_item_label']
-
-CHANGED = 'yellow'
-UNCHANGED = 'green'
-
 
 def deep_serialize(data, indent=0):
     # pylint: disable=I0011,E0602,R0912,W0631
@@ -78,8 +77,8 @@ def deep_serialize(data, indent=0):
         string_form = str(data)
         if len(string_form) == 0:
             return "\"\""
-        else:
-            return string_form
+
+        return string_form
     return output
 
 
@@ -195,7 +194,7 @@ class CallbackModule(CallbackBase):
 
     def _get_duration(self):
         end = datetime.now()
-        total_duration = (end - self.tark_started)
+        total_duration = (end - self.task_started)
         seconds = total_duration.total_seconds()
         if seconds >= 60:
             seconds_remaining = seconds % 60
@@ -217,46 +216,44 @@ class CallbackModule(CallbackBase):
                 return "%s | %s | %s | rc=%s | stdout: \n%s\n\n\t\t\t\tstderr: %s" % \
                     (hostname, caption, duration,
                      result.get('rc', 0), stdout, stderr)
-            else:
-                if len(stdout) > 0:
-                    return "%s | %s | %s | rc=%s | stdout: \n%s\n" % \
-                        (hostname, caption, duration, result.get('rc', 0), stdout)
-                else:
-                    return "%s | %s | %s | rc=%s | no stdout" % \
-                        (hostname, caption, duration, result.get('rc', 0))
-        else:
-            return "%s | %s | %s | rc=%s" % (hostname, caption, duration, result.get('rc', 0))
+
+            if len(stdout) > 0:
+                return "%s | %s | %s | rc=%s | stdout: \n%s\n" % \
+                    (hostname, caption, duration, result.get('rc', 0), stdout)
+
+            return "%s | %s | %s | rc=%s | no stdout" % \
+                (hostname, caption, duration, result.get('rc', 0))
+
+        return "%s | %s | %s | rc=%s" % (hostname, caption, duration, result.get('rc', 0))
 
     def v2_playbook_on_task_start(self, task, is_conditional):
-        # pylint: disable=I0011,W0613
-        self._open_section(task.get_name(), task.get_path())
-        self._task_level += 1
+        parentTask = task.get_first_parent_include()
+        if parentTask is not None:
+            sectionName = task._role.get_name()
+            if parentTask.action.endswith('tasks'):
+                sectionName = os.path.splitext(os.path.basename(task.get_path()))[0]
+            self._open_section("  ↳ {} : {}".format(sectionName, task.name))
+        else:
+            self._open_section(task.get_name(), task.get_path())
 
     def _open_section(self, section_name, path=None):
-        # pylint: disable=I0011,W0201
-        self.tark_started = datetime.now()
+        self.task_started = datetime.now()
 
         prefix = ''
-        if self._task_level > 0:
-            prefix = '  ➥'
+        ts = self.task_started.strftime("%H:%M:%S")
 
-        ts = self.tark_started.strftime(
-            "%H:%M:%S")
         if self._display.verbosity > 1:
             if path:
                 self._emit_line("[{}]: {}".format(ts, path))
-        self.task_start_preamble = "[{}]{} {} ...".format(
-            ts, prefix, section_name)
+        self.task_start_preamble = "[{}]{} {} ...".format(ts, prefix, section_name)
         sys.stdout.write(self.task_start_preamble)
 
     def v2_playbook_on_handler_task_start(self, task):
         self._emit_line("triggering handler | %s " % task.get_name().strip())
 
     def v2_runner_on_failed(self, result, ignore_errors=False):
-        # pylint: disable=I0011,W0613,W0201
         duration = self._get_duration()
         host_string = self._host_string(result)
-        self._task_level = 0
 
         if 'exception' in result._result:
             exception_message = "An exception occurred during task execution."
@@ -270,12 +267,12 @@ class CallbackModule(CallbackBase):
                     "The full traceback is:\n" + \
                     result._result['exception'].replace('\n', '')
 
-                self._emit_line(msg, color='red')
+                self._emit_line(msg, color=C.COLOR_ERROR)
 
         self._emit_line("%s | FAILED | %s" %
                         (host_string,
-                         duration), color='red')
-        self._emit_line(deep_serialize(result._result), color='red')
+                         duration), color=C.COLOR_ERROR)
+        self._emit_line(deep_serialize(result._result), color=C.COLOR_ERROR)
 
     def v2_on_file_diff(self, result):
 
@@ -293,7 +290,8 @@ class CallbackModule(CallbackBase):
             if diff:
                 self._emit_line(diff)
 
-    def _host_string(self, result):
+    @staticmethod
+    def _host_string(result):
         delegated_vars = result._result.get('_ansible_delegated_vars', None)
 
         if delegated_vars:
@@ -305,7 +303,6 @@ class CallbackModule(CallbackBase):
         return host_string
 
     def v2_runner_on_ok(self, result):
-        # pylint: disable=I0011,W0201,
         duration = self._get_duration()
 
         self._clean_results(result._result, result._task.action)
@@ -314,11 +311,12 @@ class CallbackModule(CallbackBase):
 
         self._clean_results(result._result, result._task.action)
 
-        if result._task.action in ('include', 'include_role'):
-            sys.stdout.write("\b\b\b\b    \n")
+        if result._task.action in ('include', 'include_role', 'include_tasks'):
+            sys.stdout.write("\b\b\b\b ")
+            if result._task.action in ('include', 'include_role'):
+                sys.stdout.write("    \n")
             return
 
-        self._task_level = 0
         msg, color = self._changed_or_not(result._result, host_string)
 
         if result._task.loop and self._display.verbosity > 0 and 'results' in result._result:
@@ -332,25 +330,24 @@ class CallbackModule(CallbackBase):
                             (msg, duration), color=color)
         self._handle_warnings(result._result)
 
-        if (
-            self._display.verbosity > 0 or
-            '_ansible_verbose_always' in result._result
-        ) and not '_ansible_verbose_override' in result._result:
+        if ((self._display.verbosity > 0 or '_ansible_verbose_always' in result._result)
+                and not '_ansible_verbose_override' in result._result):
             self._emit_line(deep_serialize(result._result), color=color)
 
         result._preamble = self.task_start_preamble
 
-    def _changed_or_not(self, result, host_string):
+    @staticmethod
+    def _changed_or_not(result, host_string):
         if result.get('changed', False):
             msg = "%s | CHANGED" % host_string
-            color = CHANGED
+            color = C.COLOR_CHANGED
         else:
             msg = "%s | SUCCESS" % host_string
-            color = UNCHANGED
+            color = C.COLOR_OK
 
         return [msg, color]
 
-    def _emit_line(self, lines, color='green'):
+    def _emit_line(self, lines, color=C.COLOR_OK):
 
         if self.task_start_preamble is None:
             self._open_section("system")
@@ -363,24 +360,23 @@ class CallbackModule(CallbackBase):
             self._display.display(line, color=color)
 
     def v2_runner_on_unreachable(self, result):
-        self._task_level = 0
-        self._emit_line("%s | UNREACHABLE!: %s" %
-                        (self._host_string(result), result._result.get('msg', '')), color=CHANGED)
+        self._emit_line('{} | UNREACHABLE!: {}'.format(
+            self._host_string(result), result._result.get('msg', '')), color=C.COLOR_CHANGED)
 
     def v2_runner_on_skipped(self, result):
         duration = self._get_duration()
-        self._task_level = 0
 
         self._emit_line("%s | SKIPPED | %s" %
-                        (self._host_string(result), duration), color='cyan')
+                        (self._host_string(result), duration), color=C.COLOR_SKIP)
 
     def v2_playbook_on_include(self, included_file):
-        self._open_section("system")
-
-        msg = 'included: %s for %s' % \
-            (included_file._filename, ", ".join(
-                [h.name for h in included_file._hosts]))
-        self._emit_line(msg, color='cyan')
+        if self.task_start_preamble.endswith(" ..."):
+            self.task_start_preamble = " "
+            msg = '| {} | {} | {}'.format(
+                ", ".join([h.name for h in included_file._hosts]),
+                'INCLUDED',
+                os.path.basename(included_file._filename))
+            self._display.display(msg, color=C.COLOR_SKIP)
 
     def v2_playbook_on_stats(self, stats):
         self._open_section("system")
@@ -392,18 +388,19 @@ class CallbackModule(CallbackBase):
 
             self._emit_line(u"%s : %s %s %s %s" % (
                 hostcolor(h, t),
-                colorize(u'ok', t['ok'], UNCHANGED),
-                colorize(u'changed', t['changed'], CHANGED),
-                colorize(u'unreachable', t['unreachable'], CHANGED),
-                colorize(u'failed', t['failures'], 'red')))
+                colorize(u'ok', t['ok'], C.COLOR_OK),
+                colorize(u'changed', t['changed'], C.COLOR_CHANGED),
+                colorize(u'unreachable', t['unreachable'], C.COLOR_UNREACHABLE),
+                colorize(u'failed', t['failures'], C.COLOR_ERROR)))
 
     def __init__(self, *args, **kwargs):
         super(CallbackModule, self).__init__(*args, **kwargs)
-        self._task_level = 0
+        self.task_started = datetime.now()
         self.task_start_preamble = None
         # python2 only
         try:
             reload(sys).setdefaultencoding('utf8')
+        # pylint: disable=W0702
         except:
             pass
 
