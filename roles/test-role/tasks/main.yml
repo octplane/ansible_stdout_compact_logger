@@ -4,6 +4,10 @@
   include_role: 
     name: imported
 
+- name: Import tasks
+  include_tasks: 
+    file: imported_task.yml
+
 - name: Clean test
   file:
     path: /tmp/test
