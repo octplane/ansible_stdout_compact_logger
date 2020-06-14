@@ -1,5 +1,4 @@
 # coding=utf-8
-# pylint: disable=I0011,E0401,C0103,C0111,W0212
 
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
@@ -79,8 +78,8 @@ def deep_serialize(data, indent=0):
         string_form = str(data)
         if len(string_form) == 0:
             return "\"\""
-        else:
-            return string_form
+
+        return string_form
     return output
 
 
@@ -196,7 +195,7 @@ class CallbackModule(CallbackBase):
 
     def _get_duration(self):
         end = datetime.now()
-        total_duration = (end - self.tark_started)
+        total_duration = (end - self.task_started)
         seconds = total_duration.total_seconds()
         if seconds >= 60:
             seconds_remaining = seconds % 60
@@ -218,18 +217,17 @@ class CallbackModule(CallbackBase):
                 return "%s | %s | %s | rc=%s | stdout: \n%s\n\n\t\t\t\tstderr: %s" % \
                     (hostname, caption, duration,
                      result.get('rc', 0), stdout, stderr)
-            else:
-                if len(stdout) > 0:
-                    return "%s | %s | %s | rc=%s | stdout: \n%s\n" % \
-                        (hostname, caption, duration, result.get('rc', 0), stdout)
-                else:
-                    return "%s | %s | %s | rc=%s | no stdout" % \
-                        (hostname, caption, duration, result.get('rc', 0))
-        else:
-            return "%s | %s | %s | rc=%s" % (hostname, caption, duration, result.get('rc', 0))
+
+            if len(stdout) > 0:
+                return "%s | %s | %s | rc=%s | stdout: \n%s\n" % \
+                    (hostname, caption, duration, result.get('rc', 0), stdout)
+
+            return "%s | %s | %s | rc=%s | no stdout" % \
+                (hostname, caption, duration, result.get('rc', 0))
+
+        return "%s | %s | %s | rc=%s" % (hostname, caption, duration, result.get('rc', 0))
 
     def v2_playbook_on_task_start(self, task, is_conditional):
-        # pylint: disable=I0011,W0613
         parentTask = task.get_first_parent_include()
         if parentTask is not None:
             sectionName = task._role.get_name()
@@ -240,11 +238,10 @@ class CallbackModule(CallbackBase):
             self._open_section(task.get_name(), task.get_path())
 
     def _open_section(self, section_name, path=None):
-        # pylint: disable=I0011,W0201
-        self.tark_started = datetime.now()
+        self.task_started = datetime.now()
 
         prefix = ''
-        ts = self.tark_started.strftime("%H:%M:%S")
+        ts = self.task_started.strftime("%H:%M:%S")
 
         if self._display.verbosity > 1:
             if path:
@@ -256,7 +253,6 @@ class CallbackModule(CallbackBase):
         self._emit_line("triggering handler | %s " % task.get_name().strip())
 
     def v2_runner_on_failed(self, result, ignore_errors=False):
-        # pylint: disable=I0011,W0613,W0201
         duration = self._get_duration()
         host_string = self._host_string(result)
 
@@ -295,7 +291,8 @@ class CallbackModule(CallbackBase):
             if diff:
                 self._emit_line(diff)
 
-    def _host_string(self, result):
+    @staticmethod
+    def _host_string(result):
         delegated_vars = result._result.get('_ansible_delegated_vars', None)
 
         if delegated_vars:
@@ -307,7 +304,6 @@ class CallbackModule(CallbackBase):
         return host_string
 
     def v2_runner_on_ok(self, result):
-        # pylint: disable=I0011,W0201,
         duration = self._get_duration()
 
         self._clean_results(result._result, result._task.action)
@@ -335,15 +331,14 @@ class CallbackModule(CallbackBase):
                             (msg, duration), color=color)
         self._handle_warnings(result._result)
 
-        if (
-            self._display.verbosity > 0 or
-            '_ansible_verbose_always' in result._result
-        ) and not '_ansible_verbose_override' in result._result:
+        if ((self._display.verbosity > 0 or '_ansible_verbose_always' in result._result)
+                and not '_ansible_verbose_override' in result._result):
             self._emit_line(deep_serialize(result._result), color=color)
 
         result._preamble = self.task_start_preamble
 
-    def _changed_or_not(self, result, host_string):
+    @staticmethod
+    def _changed_or_not(result, host_string):
         if result.get('changed', False):
             msg = "%s | CHANGED" % host_string
             color = CHANGED
@@ -378,8 +373,10 @@ class CallbackModule(CallbackBase):
     def v2_playbook_on_include(self, included_file):
         if self.task_start_preamble.endswith(" ..."):
             self.task_start_preamble = " "
-            msg = '| %s | %s | %s' % \
-                (", ".join([h.name for h in included_file._hosts]), 'INCLUDED', os.path.basename(included_file._filename))
+            msg = '| {} | {} | {}'.format(
+                ", ".join([h.name for h in included_file._hosts]),
+                'INCLUDED',
+                os.path.basename(included_file._filename))
             self._display.display(msg, color='cyan')
 
     def v2_playbook_on_stats(self, stats):
@@ -399,10 +396,12 @@ class CallbackModule(CallbackBase):
 
     def __init__(self, *args, **kwargs):
         super(CallbackModule, self).__init__(*args, **kwargs)
+        self.task_started = datetime.now()
         self.task_start_preamble = None
         # python2 only
         try:
             reload(sys).setdefaultencoding('utf8')
+        # pylint: disable=W0702
         except:
             pass
 
