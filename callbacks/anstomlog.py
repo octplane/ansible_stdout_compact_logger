@@ -5,6 +5,7 @@ from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
 import sys
+import os
 from datetime import datetime
 
 try:
@@ -229,24 +230,26 @@ class CallbackModule(CallbackBase):
 
     def v2_playbook_on_task_start(self, task, is_conditional):
         # pylint: disable=I0011,W0613
-        self._open_section(task.get_name(), task.get_path())
-        self._task_level += 1
+        parentTask = task.get_first_parent_include()
+        if parentTask is not None:
+            sectionName = task._role.get_name()
+            if parentTask.action.endswith('tasks'):
+                sectionName = os.path.splitext(os.path.basename(task.get_path()))[0]
+            self._open_section("  ↳ {} : {}".format(sectionName, task.name))
+        else:
+            self._open_section(task.get_name(), task.get_path())
 
     def _open_section(self, section_name, path=None):
         # pylint: disable=I0011,W0201
         self.tark_started = datetime.now()
 
         prefix = ''
-        if self._task_level > 0:
-            prefix = '  ➥'
+        ts = self.tark_started.strftime("%H:%M:%S")
 
-        ts = self.tark_started.strftime(
-            "%H:%M:%S")
         if self._display.verbosity > 1:
             if path:
                 self._emit_line("[{}]: {}".format(ts, path))
-        self.task_start_preamble = "[{}]{} {} ...".format(
-            ts, prefix, section_name)
+        self.task_start_preamble = "[{}]{} {} ...".format(ts, prefix, section_name)
         sys.stdout.write(self.task_start_preamble)
 
     def v2_playbook_on_handler_task_start(self, task):
@@ -256,7 +259,6 @@ class CallbackModule(CallbackBase):
         # pylint: disable=I0011,W0613,W0201
         duration = self._get_duration()
         host_string = self._host_string(result)
-        self._task_level = 0
 
         if 'exception' in result._result:
             exception_message = "An exception occurred during task execution."
@@ -314,11 +316,12 @@ class CallbackModule(CallbackBase):
 
         self._clean_results(result._result, result._task.action)
 
-        if result._task.action in ('include', 'include_role'):
-            sys.stdout.write("\b\b\b\b    \n")
+        if result._task.action in ('include', 'include_role', 'include_tasks'):
+            sys.stdout.write("\b\b\b\b ")
+            if result._task.action in ('include', 'include_role'):
+                sys.stdout.write("    \n")
             return
 
-        self._task_level = 0
         msg, color = self._changed_or_not(result._result, host_string)
 
         if result._task.loop and self._display.verbosity > 0 and 'results' in result._result:
@@ -363,24 +366,21 @@ class CallbackModule(CallbackBase):
             self._display.display(line, color=color)
 
     def v2_runner_on_unreachable(self, result):
-        self._task_level = 0
         self._emit_line("%s | UNREACHABLE!: %s" %
                         (self._host_string(result), result._result.get('msg', '')), color=CHANGED)
 
     def v2_runner_on_skipped(self, result):
         duration = self._get_duration()
-        self._task_level = 0
 
         self._emit_line("%s | SKIPPED | %s" %
                         (self._host_string(result), duration), color='cyan')
 
     def v2_playbook_on_include(self, included_file):
-        self._open_section("system")
-
-        msg = 'included: %s for %s' % \
-            (included_file._filename, ", ".join(
-                [h.name for h in included_file._hosts]))
-        self._emit_line(msg, color='cyan')
+        if self.task_start_preamble.endswith(" ..."):
+            self.task_start_preamble = " "
+            msg = '| %s | %s | %s' % \
+                (", ".join([h.name for h in included_file._hosts]), 'INCLUDED', os.path.basename(included_file._filename))
+            self._display.display(msg, color='cyan')
 
     def v2_playbook_on_stats(self, stats):
         self._open_section("system")
@@ -399,7 +399,6 @@ class CallbackModule(CallbackBase):
 
     def __init__(self, *args, **kwargs):
         super(CallbackModule, self).__init__(*args, **kwargs)
-        self._task_level = 0
         self.task_start_preamble = None
         # python2 only
         try:
