@@ -2,5 +2,4 @@
 localhost ansible_connection=local
 
 [second]
-
 127.0.0.1 ansible_connection=local
