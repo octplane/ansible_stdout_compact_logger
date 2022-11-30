@@ -1,0 +1,5 @@
+---
+- name: "Test case for issue unicode"
+  hosts: first
+  tasks:
+  - include_tasks: "./test-files/included-tasks.yml"

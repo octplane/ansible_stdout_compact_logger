@@ -1,0 +1,5 @@
+- block:
+  - debug:
+     msg: "Je suis une tâche incluse!"
+  - name: "Error with élégant name"
+    debug: msg="Hello world!"
