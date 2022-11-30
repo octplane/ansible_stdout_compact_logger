@@ -230,10 +230,11 @@ class CallbackModule(CallbackBase):
         parentTask = task.get_first_parent_include()
         if parentTask is not None:
             if parentTask.action.endswith('tasks'):
-                sectionName = os.path.splitext(os.path.basename(task.get_path()))[0]
+                parentTaskName = os.path.splitext(os.path.basename(task.get_path()))[0]
+                self._open_section("    ↳ {} : {}".format(parentTaskName, task.name))
             else:
                 sectionName = task._role.get_name()
-            self._open_section("  ↳ {} : {}".format(sectionName, task.name))
+                self._open_section("  ↳ {} : {}".format(sectionName, task.name))
         else:
             self._open_section(task.get_name(), task.get_path())
 
