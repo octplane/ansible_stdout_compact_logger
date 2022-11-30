@@ -63,4 +63,5 @@ MIT, see LICENSE file.
 - Farzad FARID @farzy
 - Jérôme BAROTIN @jbarotin
 - Dale Henries @dalehenries
+- Thomas Decaux @ebuildy
 
