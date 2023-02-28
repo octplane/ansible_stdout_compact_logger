@@ -16,6 +16,7 @@ except ImportError:
         # pylint: disable=I0011,R0903
         pass
     class C:
+
         COLOR_OK = 'green'
 
 import unittest
@@ -27,6 +28,7 @@ DELETABLE_FIELDS = [
     'stdout', 'stdout_lines', 'rc', 'stderr', 'start', 'end', 'msg',
     '_ansible_verbose_always', '_ansible_no_log', 'invocation', '_ansible_parsed',
     '_ansible_item_result', '_ansible_ignore_errors', '_ansible_item_label']
+
 
 def deep_serialize(data, indent=0):
     # pylint: disable=I0011,E0602,R0912,W0631
@@ -319,6 +321,20 @@ class CallbackModule(CallbackBase):
                 sys.stdout.write("    \n")
             return
 
+        display_ok = True
+        try:
+            display_ok = not self.display_ok_hosts
+        except Exception:
+            pass
+
+        try:
+            display_ok = self.get_option('display_ok_hosts')
+        except Exception:
+            pass
+
+        if not display_ok:
+            return
+
         msg, color = self._changed_or_not(result._result, host_string)
 
         if result._task.loop and self._display.verbosity > 0 and 'results' in result._result:
@@ -333,7 +349,7 @@ class CallbackModule(CallbackBase):
         self._handle_warnings(result._result)
 
         if ((self._display.verbosity > 0 or '_ansible_verbose_always' in result._result)
-                and not '_ansible_verbose_override' in result._result):
+                and '_ansible_verbose_override' not in result._result):
             self._emit_line(deep_serialize(result._result), color=color)
 
         result._preamble = self.task_start_preamble
@@ -366,6 +382,20 @@ class CallbackModule(CallbackBase):
             self._host_string(result), result._result.get('msg', '')), color=C.COLOR_CHANGED)
 
     def v2_runner_on_skipped(self, result):
+        display_skipped = True
+        try:
+            display_skipped = self.display_skipped_hosts
+        except Exception:
+            pass
+
+        try:
+            display_skipped = self.get_option('display_skipped_hosts')
+        except Exception:
+            pass
+
+        if not display_skipped:
+            return
+
         duration = self._get_duration()
 
         self._emit_line("%s | SKIPPED | %s" %
