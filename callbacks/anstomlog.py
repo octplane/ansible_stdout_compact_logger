@@ -21,6 +21,31 @@ except ImportError:
 
 import unittest
 
+DOCUMENTATION = r'''
+options:
+    display_skipped_hosts:
+        name: Show skipped hosts
+        description: "Toggle to control displaying skipped task/host results in a task"
+        type: bool
+        default: yes
+        env:
+            - name: ANSIBLE_DISPLAY_SKIPPED_HOSTS
+        ini:
+            - key: display_skipped_hosts
+              section: defaults
+    display_ok_hosts:
+        name: Show 'ok' hosts
+        description: "Toggle to control displaying 'ok' task/host results in a task"
+        type: bool
+        default: yes
+        env:
+            - name: ANSIBLE_DISPLAY_OK_HOSTS
+        ini:
+            - key: display_ok_hosts
+              section: defaults
+'''
+
+
 # Fields we would like to see before the others, in this order, please...
 PREFERED_FIELDS = ['stdout', 'rc', 'stderr', 'start', 'end', 'msg']
 # Fields we will delete from the result
@@ -321,17 +346,7 @@ class CallbackModule(CallbackBase):
                 sys.stdout.write("    \n")
             return
 
-        display_ok = True
-        try:
-            display_ok = not self.display_ok_hosts
-        except Exception:
-            pass
-
-        try:
-            display_ok = self.get_option('display_ok_hosts')
-        except Exception:
-            pass
-
+        display_ok = self.get_option('display_ok_hosts')
         if not display_ok:
             return
 
@@ -382,17 +397,7 @@ class CallbackModule(CallbackBase):
             self._host_string(result), result._result.get('msg', '')), color=C.COLOR_CHANGED)
 
     def v2_runner_on_skipped(self, result):
-        display_skipped = True
-        try:
-            display_skipped = self.display_skipped_hosts
-        except Exception:
-            pass
-
-        try:
-            display_skipped = self.get_option('display_skipped_hosts')
-        except Exception:
-            pass
-
+        display_skipped = self.get_option('display_skipped_hosts')
         if not display_skipped:
             return
 
