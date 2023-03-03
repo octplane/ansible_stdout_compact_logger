@@ -5,10 +5,9 @@ __metaclass__ = type
 
 import sys
 import os
-import json
 from datetime import datetime
 
-from ansible.utils.color import colorize, hostcolor
+from ansible.utils.color import colorize, hostcolor, ANSIBLE_COLOR
 from ansible.plugins.callback import CallbackBase
 from ansible import constants as C
 from ansible.vars.clean import strip_internal_keys, module_response_deepcopy
@@ -391,6 +390,10 @@ class CallbackModule(CallbackBase):
 
         result._preamble = self.task_start_preamble
 
+    def eat(self, count=4):
+        if ANSIBLE_COLOR:
+            sys.stdout.write(count*"\b")
+
     @staticmethod
     def _changed_or_not(result, host_string):
         if result.get('changed', False):
@@ -408,7 +411,8 @@ class CallbackModule(CallbackBase):
             self._open_section("system")
 
         if self.task_start_preamble.endswith(" ..."):
-            sys.stdout.write("\b\b\b\b | ")
+            self.eat()
+            self.stdout.write(" | ")
             self.task_start_preamble = " "
 
         for line in lines.splitlines():
