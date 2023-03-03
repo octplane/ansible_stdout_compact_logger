@@ -7,18 +7,9 @@ import sys
 import os
 from datetime import datetime
 
-try:
-    from ansible.utils.color import colorize, hostcolor
-    from ansible.plugins.callback import CallbackBase
-    from ansible import constants as C
-except ImportError:
-    class CallbackBase:
-        # pylint: disable=I0011,R0903
-        pass
-    class C:
-
-        COLOR_OK = 'green'
-
+from ansible.utils.color import colorize, hostcolor
+from ansible.plugins.callback import CallbackBase
+from ansible import constants as C
 import unittest
 
 DOCUMENTATION = r'''
