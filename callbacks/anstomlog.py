@@ -266,7 +266,7 @@ class CallbackModule(CallbackBase):
         if self._display.verbosity > 1:
             if path:
                 self._emit_line("[{}]: {}".format(ts, path))
-        self.task_start_preamble = "[{}]{} {} ...".format(ts, prefix, section_name)
+        self.task_start_preamble = "[{}]{} {}\n".format(ts, prefix, section_name)
         sys.stdout.write(self.task_start_preamble)
 
     def v2_playbook_on_handler_task_start(self, task):
@@ -332,11 +332,6 @@ class CallbackModule(CallbackBase):
 
         self._clean_results(result._result, result._task.action)
 
-        if result._task.action in ('include', 'include_role', 'include_tasks'):
-            sys.stdout.write("\b\b\b\b ")
-            if result._task.action in ('include', 'include_role'):
-                sys.stdout.write("    \n")
-            return
 
         display_ok = self.get_option("display_ok_hosts")
         if not display_ok:
@@ -351,7 +346,7 @@ class CallbackModule(CallbackBase):
                 self._emit_line("%s | %s" %
                                 (item_msg, duration), color=color)
         else:
-            self._emit_line("%s | %s" %
+            self._emit_line("↳  %s | %s" %
                             (msg, duration), color=color)
         self._handle_warnings(result._result)
 

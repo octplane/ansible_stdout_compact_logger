@@ -1,0 +1,5 @@
+---
+- name: "Test case for issue unicode"
+  hosts: first,second
+  tasks:
+    - command: "hostname"
