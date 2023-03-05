@@ -5,7 +5,7 @@ localhost ansible_connection=local
 127.0.0.1 ansible_connection=local
 
 [third]
-127.0.0.1 ansible_connection=localhost
+127.0.0.1 ansible_connection=local
 
 [unreach]
 1.2.3.4
