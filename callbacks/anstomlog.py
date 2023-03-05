@@ -42,8 +42,9 @@ PREFERED_FIELDS = ['stdout', 'rc', 'stderr', 'start', 'end', 'msg']
 # Fields we will delete from the result
 DELETABLE_FIELDS = [
     'stdout', 'stdout_lines', 'rc', 'stderr', 'start', 'end', 'msg',
-    '_ansible_verbose_always', '_ansible_no_log', 'invocation', '_ansible_parsed',
-    '_ansible_item_result', '_ansible_ignore_errors', '_ansible_item_label']
+    '_ansible_verbose_always', '_ansible_no_log', 'invocation',
+    '_ansible_parsed', '_ansible_item_result', '_ansible_ignore_errors',
+    '_ansible_item_label']
 
 
 def deep_serialize(data, indent=0):
@@ -337,7 +338,7 @@ class CallbackModule(CallbackBase):
                 sys.stdout.write("    \n")
             return
 
-        display_ok = self.get_option('display_ok_hosts')
+        display_ok = self.get_option("display_ok_hosts")
         if not display_ok:
             return
 
@@ -384,8 +385,14 @@ class CallbackModule(CallbackBase):
             self._display.display(line, color=color)
 
     def v2_runner_on_unreachable(self, result):
-        self._emit_line('{} | UNREACHABLE!: {}'.format(
-            self._host_string(result), result._result.get('msg', '')), color=C.COLOR_CHANGED)
+        line = '{} | UNREACHABLE!: {}'.format(
+            self._host_string(result), result._result.get('msg', ''))
+
+
+        if result._task.ignore_unreachable:
+            line = line + " | IGNORED"
+
+        self._emit_line(line, C.COLOR_SKIP)
 
     def v2_runner_on_skipped(self, result):
         display_skipped = self.get_option('display_skipped_hosts')
@@ -414,23 +421,20 @@ class CallbackModule(CallbackBase):
         for h in hosts:
             t = stats.summarize(h)
 
-            self._emit_line(u"%s : %s %s %s %s" % (
+            self._emit_line(u"%s : %s %s %s %s %s %s %s" % (
                 hostcolor(h, t),
                 colorize(u'ok', t['ok'], C.COLOR_OK),
                 colorize(u'changed', t['changed'], C.COLOR_CHANGED),
                 colorize(u'unreachable', t['unreachable'], C.COLOR_UNREACHABLE),
-                colorize(u'failed', t['failures'], C.COLOR_ERROR)))
+                colorize(u'failed', t['failures'], C.COLOR_ERROR),
+                colorize(u'skipped', t['skipped'], C.COLOR_SKIP),
+                colorize(u'rescued', t['rescued'], C.COLOR_OK),
+                colorize(u'ignored', t['ignored'], C.COLOR_WARN)))
 
     def __init__(self, *args, **kwargs):
         super(CallbackModule, self).__init__(*args, **kwargs)
         self.task_started = datetime.now()
         self.task_start_preamble = None
-        # python2 only
-        try:
-            reload(sys).setdefaultencoding('utf8')
-        # pylint: disable=W0702
-        except:
-            pass
 
 
 if __name__ == '__main__':

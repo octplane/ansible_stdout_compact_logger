@@ -1,5 +1,6 @@
 ---
 - name: "Test single execution"
-  hosts: first,second
+  hosts: unreach
+  ignore_unreachable: true
   tasks:
     - command: "ls ."

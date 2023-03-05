@@ -1,6 +1,6 @@
 ---
 - name: "Test case for issue unicode"
-  hosts: first
+  hosts: first,
   tasks:
    - debug:
        msg: "Ansible est ÉLÉGANT!"

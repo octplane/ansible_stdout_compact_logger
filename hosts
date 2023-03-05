@@ -6,3 +6,6 @@ localhost ansible_connection=local
 
 [third]
 127.0.0.1 ansible_connection=localhost
+
+[unreach]
+1.2.3.4
