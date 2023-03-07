@@ -346,23 +346,26 @@ class CallbackModule(CallbackBase):
         if not display_ok:
             return
 
+        verbose = '_ansible_verbose_always' in result._result
+        no_verbose_override = '_ansible_verbose_override' not in result._result
+
+        abridged_result = strip_internal_keys(module_response_deepcopy(result._result))
+        if self._display.verbosity < 3 and 'invocation' in abridged_result:
+            del abridged_result['invocation']
+
+        # remove diff information from screen output
+        if self._display.verbosity < 3 and 'diff' in abridged_result:
+            del abridged_result['diff']
+
+        # remove exception from screen output
+        if 'exception' in abridged_result:
+            del abridged_result['exception']
+
         if (self.get_option("dump_loop_items") or \
                 self._display.verbosity > 0) \
                 and result._task.loop \
                 and 'results' in result._result:
-            abridged_result = strip_internal_keys(module_response_deepcopy(result._result))
             # remove invocation unless specifically wanting it
-            if self._display.verbosity < 3 and 'invocation' in abridged_result:
-                del abridged_result['invocation']
-
-            # remove diff information from screen output
-            if self._display.verbosity < 3 and 'diff' in abridged_result:
-                del abridged_result['diff']
-
-            # remove exception from screen output
-            if 'exception' in abridged_result:
-                del abridged_result['exception']
-
             for item in abridged_result['results']:
                 msg, color = self._changed_or_not(item, host_string)
                 del item['ansible_loop_var']
@@ -375,9 +378,9 @@ class CallbackModule(CallbackBase):
             self._emit_line("↳  %s | %s" %
                             (msg, duration), color=color)
             if ((self._display.verbosity > 0
-                    or '_ansible_verbose_always' in result._result)
-                    and '_ansible_verbose_override' not in result._result):
-                self._emit_line(deep_serialize(result._result), color=color)
+                    or verbose)
+                    and no_verbose_override):
+                self._emit_line(deep_serialize(abridged_result), color=color)
 
         self._clean_results(result._result, result._task.action)
         self._handle_warnings(result._result)
