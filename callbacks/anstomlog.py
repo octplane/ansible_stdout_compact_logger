@@ -375,6 +375,10 @@ class CallbackModule(CallbackBase):
                 self._emit_line("%s | %s" %
                                 (item_msg, duration), color=color)
         else:
+            for key in ['failed', 'changed']:
+                if key in abridged_result:
+                    del abridged_result[key]
+
             self._emit_line("↳  %s | %s" %
                             (msg, duration), color=color)
             if ((self._display.verbosity > 0
