@@ -1,0 +1,10 @@
+- hosts: all
+  gather_facts: no  
+  tasks:
+    - local_action:
+        module: debug
+        msg: "test debug not printed (test case for #12)"
+    - local_action:
+        module: debug
+        msg: "test debug printed (test case for #12)"
+      changed_when: true
