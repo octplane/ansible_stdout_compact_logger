@@ -1,0 +1,9 @@
+- hosts: all
+  gather_facts: False
+  tasks:
+    - name: "Test case for #18, run with -vv or add dump_loop_items = True in ansible.cfg to show items"
+      debug:
+        msg: "Hello {{item}}"
+      with_items:
+        - alice
+        - bob

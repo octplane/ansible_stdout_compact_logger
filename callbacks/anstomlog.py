@@ -5,11 +5,15 @@ __metaclass__ = type
 
 import sys
 import os
+import json
 from datetime import datetime
 
 from ansible.utils.color import colorize, hostcolor
 from ansible.plugins.callback import CallbackBase
 from ansible import constants as C
+from ansible.vars.clean import strip_internal_keys, module_response_deepcopy
+from ansible.parsing.ajson import AnsibleJSONEncoder
+
 import unittest
 
 DOCUMENTATION = r'''
@@ -33,6 +37,16 @@ options:
             - name: ANSIBLE_DISPLAY_OK_HOSTS
         ini:
             - key: display_ok_hosts
+              section: defaults
+    dump_loop_items:
+        name: Dump loop items
+        description: "Show the details of loop executions"
+        type: bool
+        default: no
+        env:
+            - name: ANSIBLE_DUMP_LOOP_ITEMS
+        ini:
+            - key: dump_loop_items
               section: defaults
 '''
 
@@ -325,35 +339,48 @@ class CallbackModule(CallbackBase):
 
     def v2_runner_on_ok(self, result):
         duration = self._get_duration()
-
-        self._clean_results(result._result, result._task.action)
-
         host_string = self._host_string(result)
-
-        self._clean_results(result._result, result._task.action)
-
-
         display_ok = self.get_option("display_ok_hosts")
+        msg, color = self._changed_or_not(result._result, host_string)
+
         if not display_ok:
             return
 
-        msg, color = self._changed_or_not(result._result, host_string)
+        if (self.get_option("dump_loop_items") or \
+                self._display.verbosity > 0) \
+                and result._task.loop \
+                and 'results' in result._result:
+            abridged_result = strip_internal_keys(module_response_deepcopy(result._result))
+            # remove invocation unless specifically wanting it
+            if self._display.verbosity < 3 and 'invocation' in abridged_result:
+                del abridged_result['invocation']
 
-        if result._task.loop and self._display.verbosity > 0 and 'results' in result._result:
-            for item in result._result['results']:
+            # remove diff information from screen output
+            if self._display.verbosity < 3 and 'diff' in abridged_result:
+                del abridged_result['diff']
+
+            # remove exception from screen output
+            if 'exception' in abridged_result:
+                del abridged_result['exception']
+
+            for item in abridged_result['results']:
                 msg, color = self._changed_or_not(item, host_string)
-                item_msg = "%s - item=%s" % (msg, self._get_item(item))
+                del item['ansible_loop_var']
+                del item['failed']
+                del item['changed']
+                item_msg = "%s - item=%s" % (msg, item)
                 self._emit_line("%s | %s" %
                                 (item_msg, duration), color=color)
         else:
             self._emit_line("↳  %s | %s" %
                             (msg, duration), color=color)
-        self._handle_warnings(result._result)
+            if ((self._display.verbosity > 0
+                    or '_ansible_verbose_always' in result._result)
+                    and '_ansible_verbose_override' not in result._result):
+                self._emit_line(deep_serialize(result._result), color=color)
 
-        if ((self._display.verbosity > 0
-                or '_ansible_verbose_always' in result._result)
-                and '_ansible_verbose_override' not in result._result):
-            self._emit_line(deep_serialize(result._result), color=color)
+        self._clean_results(result._result, result._task.action)
+        self._handle_warnings(result._result)
 
         result._preamble = self.task_start_preamble
 
